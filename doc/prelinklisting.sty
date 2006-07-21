@@ -1,0 +1,41 @@
+\NeedsTeXFormat{LaTeX2e}[2003/12/06]
+\ProvidesPackage{prelinklisting}[]
+\newcounter{prelinklisting}
+\renewcommand\theprelinklisting{\@arabic\c@prelinklisting}
+\newcommand\prelinklistingname{Listing}
+\newcommand\listprelinklistingname{List of Listings}
+\def\fps@prelinklisting{tbp}
+\def\ftype@prelinklisting{5}
+\def\ext@prelinklisting{lol}
+\def\fnum@prelinklisting{\prelinklistingname~\theprelinklisting}
+\newcommand\listofprelinklistings{%
+\begingroup
+\csname lol@parskip\endcsname
+\@ifundefined{chapter}{\section}{\chapter}*{\listprelinklistingname
+      \@mkboth{\MakeUppercase\listprelinklistingname}%
+              {\MakeUppercase\listprelinklistingname}}%
+    \@starttoc{\ext@prelinklisting}%
+\endgroup
+    }
+\newcommand*\l@prelinklisting{\@dottedtocline{1}{1.5em}{2.3em}}
+\def\JJ@caption{%
+    \bgroup
+    \@ifnextchar[{\egroup\JJ@c@ption\@firstofone}\JJ@capti@n}
+\def\JJ@capti@n{%
+  \@ifstar
+    {\egroup\JJ@c@ption\@gobble[]}%
+    {\egroup\@xdblarg{\JJ@c@ption\@firstofone}}}
+\def\JJ@c@ption#1[#2]#3{%
+  \JJ@makecaption#1\fnum@prelinklisting{#3}%
+  \def\@tempa{#2}%
+  \ifx\@tempa\@empty\else
+     {\let\\\space
+      \hyperdef{prelinklisting}{\theprelinklisting}{}
+      \let\theHprelinklisting\theprelinklisting
+      \hyper@makecurrent{prelinklisting}
+      \addcontentsline{lol}{prelinklisting}{\protect\numberline{\theprelinklisting}{#2}}%
+      \addtocounter{prelinklisting}{1}}%
+  \fi}
+\def\JJ@makecaption#1#2#3{{#1{#2: }#3\endgraf\vskip\baselineskip}}
+\let\prelinklistingcaption\JJ@caption
+\endinput

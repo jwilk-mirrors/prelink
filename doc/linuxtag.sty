@@ -1,0 +1,67 @@
+% Modified for european a4 paper size and font size requirements for LT2K++
+%
+% TEMPLATE for Usenix papers, specifically to meet requirements of
+%  TCL97 committee.
+% originally a template for producing IEEE-format articles using LaTeX.
+%   written by Matthew Ward, CS Department, Worcester Polytechnic Institute.
+% adapted by David Beazley for his excellent SWIG paper in Proceedings,
+%   Tcl 96
+% turned into a smartass generic template by De Clarke, with thanks to
+%   both the above pioneers
+% use at your own risk.  Complaints to /dev/null.
+% make it two column with no page numbering, default is 10 point
+
+% include following in document.
+%\documentclass[a4paper,10pt]{article}
+%\usepackage{twocolumn,times}
+%\pagestyle{empty}
+
+% force european A4 paper format
+\setlength{\textwidth}{16.6cm}     % width of main text
+\setlength{\textheight}{25cm}    % height of main text
+\setlength{\topmargin}{-1.7in}     % Subtract default offset
+\addtolength{\topmargin}{2.2cm}    % Topmargin
+\setlength{\topskip}{0pt}        % between header and text
+\setlength{\headheight}{10pt}   % no header
+\setlength{\headsep}{10pt}      %
+\setlength{\oddsidemargin}{-1in}   % Subtract default offset
+\addtolength{\oddsidemargin}{2.2cm}  % odd page left margin
+\setlength{\evensidemargin}{-1in}  % Subtract default offset
+\addtolength{\evensidemargin}{2.2cm} % odd page left margin
+
+% set dimensions of columns, gap between columns, and space between paragraphs
+\setlength{\columnsep}{0.25in}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{\baselineskip}
+
+% started out with art10.sty and modified params to conform to IEEE format
+% further mods to conform to Usenix standard
+
+\makeatletter
+%as Latex considers descenders in its calculation of interline spacing,
+%to get 12 point spacing for normalsize text, must set it to 10 points
+\def\@normalsize{\@setsize\normalsize{12pt}\xpt\@xpt
+\abovedisplayskip 10pt plus2pt minus5pt\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus3pt\belowdisplayshortskip 6pt plus3pt
+minus3pt\let\@listi\@listI}
+
+%need a 12 pt font size for subsection and abstract headings
+\def\subsize{\@setsize\subsize{12pt}\xipt\@xipt}
+
+%make section titles bold and 12 point, 2 blank lines before, 1 after
+\def\section{\@startsection {section}{1}{\z@}{18pt plus 2pt minus 2pt}
+{2pt plus 2pt minus 2pt}{\large\bf}}
+
+%make subsection titles bold and 11 point, 1 blank line before, 1 after
+\def\subsection{\@startsection {subsection}{2}{\z@}{12pt plus 2pt minus 2pt}
+{12pt plus 2pt minus 2pt}{\subsize\bf}}
+
+\renewcommand\scriptsize{\@setfontsize\scriptsize\@viipt\@viiipt}
+\renewcommand\tiny{\@setfontsize\tiny\@vpt\@vipt}
+\renewcommand\large{\@setfontsize\large\@xiipt{12}}
+\renewcommand\Large{\@setfontsize\Large\@xivpt{14}}
+\renewcommand\LARGE{\@setfontsize\LARGE\@xviipt{18}}
+\renewcommand\huge{\@setfontsize\huge\@xxpt{24}}
+\renewcommand\Huge{\@setfontsize\Huge\@xxvpt{28}}
+
+\makeatother

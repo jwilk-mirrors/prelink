@@ -1,0 +1,92 @@
+.TH execstack 8 "28 October 2003"
+.SH NAME
+execstack \- tool to set, clear, or query executable stack flag of ELF binaries and shared libraries
+.SH SYNOPSIS
+execstack
+.RB [OPTION...]\ [FILES]
+.SH DESCRIPTION
+.B execstack
+is a program which sets, clears, or queries executable stack flag of ELF
+binaries and shared libraries.  Linux has in the past allowed execution
+of instructions on the stack and there are lots of binaries and shared
+libraries assuming this behaviour.  Furthermore, GCC trampoline code
+for e.g. nested functions requires executable stack on many architectures.
+To avoid breaking binaries and shared libraries which need executable stack,
+ELF binaries and shared libraries now can be marked as requiring executable
+stack or not requiring it.  This marking is done through the p_flags field
+in the PT_GNU_STACK program header entry.  If the marking is missing, kernel
+or dynamic linker need to assume it might need executable stack.
+The marking is done automatically by recent GCC versions (objects using
+trampolines on the stack are marked as requiring executable stack,
+all other newly built objects are marked as not requiring it) and
+linker collects these markings into marking of the whole binary
+or shared library.  The user can override this at assembly time
+(through
+.B \-\-execstack
+or
+.B \-\-noexecstack
+assembler options), at link time (through
+.B \-z execstack
+or
+.B \-z noexecstack
+linker options) and using the
+.B execstack
+tool also on an already linker binary or shared library.
+This tool is especially useful for third party shared libraries
+where it is known that they don't need executable stack or testing proves
+it.
+.SH OPTIONS
+.TP
+.B \-s \-\-set\-execstack
+Mark binary or shared library as requiring executable stack.
+.TP
+.B \-c \-\-clear\-execstack
+Mark binary or shared library as not requiring executable stack.
+.TP
+.B \-q \-\-query
+Query executable stack marking of binaries and shared libraries.
+For each file it prints either
+.B \-
+when executable stack is not required,
+.B X
+when executable stack is required or
+.B ?
+when it is unknown whether the object requires or doesn't require
+executable stack (the marking is missing).
+.TP
+.B \-V
+Print
+.B execstack
+version and exit.
+.TP
+.B \-? \-\-help
+Print help message.
+.TP
+.B \-\-usage
+Print a short usage message.
+.SH ARGUMENTS
+Command line arguments should be names of ELF binaries and shared libraries
+which should be modified or queried.
+.SH EXAMPLES
+.RS
+# execstack -s ~/lib/libfoo.so.1
+.RE
+will mark ~/lib/libfoo.so.1 as requiring executable stack.
+.RS
+# execstack -c ~/bin/bar
+.RE
+will mark ~/bin/bar as not requiring executable stack.
+.RS
+# execstack -q ~/lib/libfoo.so.1 ~/bin/bar
+.RE
+will query executable stack marking of the given files.
+.SH SEE ALSO
+.BR ld.so (8).
+.SH BUGS
+.LP
+.B execstack
+doesn't support yet marking of executables if they do not have
+PT_GNU_STACK program header entry nor they have room for program segment
+header table growth.
+.SH AUTHORS
+Jakub Jelinek <jakub@redhat.com>.

@@ -1,0 +1,50 @@
+--- linux/fs/binfmt_elf.c.jj	Thu Sep  6 16:12:04 2001
++++ linux/fs/binfmt_elf.c	Mon Oct  1 08:22:06 2001
+@@ -400,7 +400,6 @@ static int load_elf_binary(struct linux_
+ 	int load_addr_set = 0;
+ 	char * elf_interpreter = NULL;
+ 	unsigned int interpreter_type = INTERPRETER_NONE;
+-	mm_segment_t old_fs;
+ 	unsigned long error;
+ 	struct elf_phdr * elf_ppnt, *elf_phdata;
+ 	unsigned long elf_bss, k, elf_brk;
+@@ -574,8 +573,6 @@ static int load_elf_binary(struct linux_
+ 	   the image should be loaded at fixed address, not at a variable
+ 	   address. */
+ 
+-	old_fs = get_fs();
+-	set_fs(get_ds());
+ 	for(i = 0, elf_ppnt = elf_phdata; i < elf_ex.e_phnum; i++, elf_ppnt++) {
+ 		int elf_prot = 0, elf_flags;
+ 		unsigned long vaddr;
+@@ -583,6 +580,22 @@ static int load_elf_binary(struct linux_
+ 		if (elf_ppnt->p_type != PT_LOAD)
+ 			continue;
+ 
++		if (unlikely (elf_brk > elf_bss)) {
++			unsigned long nbyte;
++	            
++			/* There was a PT_LOAD segment with p_memsz > p_filesz
++			   before this one. Map anonymous pages, if needed,
++			   and clear the area.  */
++			set_brk (elf_bss + load_bias, elf_brk + load_bias);
++			nbyte = ELF_PAGEOFFSET(elf_bss);
++			if (nbyte) {
++				nbyte = ELF_MIN_ALIGN - nbyte;
++				if (nbyte > elf_brk - elf_bss)
++					nbyte = elf_brk - elf_bss;
++				clear_user((void *) elf_bss + elf_bias, nbyte);
++			}
++		}
++
+ 		if (elf_ppnt->p_flags & PF_R) elf_prot |= PROT_READ;
+ 		if (elf_ppnt->p_flags & PF_W) elf_prot |= PROT_WRITE;
+ 		if (elf_ppnt->p_flags & PF_X) elf_prot |= PROT_EXEC;
+@@ -626,7 +639,6 @@ static int load_elf_binary(struct linux_
+ 		if (k > elf_brk)
+ 			elf_brk = k;
+ 	}
+-	set_fs(old_fs);
+ 
+ 	elf_entry += load_bias;
+ 	elf_bss += load_bias;

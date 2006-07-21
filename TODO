@@ -1,0 +1,7 @@
+- sparse files
+- security audit:
+  - should we only limit prelinking in non-world writeable directories
+- more ports
+- hack support for multi-ABI arches
+- more testing
+- some more C++ optimizations
