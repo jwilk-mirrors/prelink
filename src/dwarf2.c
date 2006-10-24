@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2005 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2005, 2006 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -430,8 +430,13 @@ adjust_dwarf2_ranges (DSO *dso, GElf_Addr offset, GElf_Addr base,
       else if (! adjusted_base)
 	{
 	  if (base + low >= start && addr_to_sec (dso, base + low) != -1)
-	    write_ptr (ptr - 2 * ptr_size, low + adjust);
-	  if (base + high >= start && addr_to_sec (dso, base + high) != -1)
+	    {
+	      write_ptr (ptr - 2 * ptr_size, low + adjust);
+	      if (high == low)
+		write_ptr (ptr - ptr_size, high + adjust);
+	    }
+	  if (low != high && base + high >= start
+	      && addr_to_sec (dso, base + high - 1) != -1)
 	    write_ptr (ptr - ptr_size, high + adjust);
 	}
     }
