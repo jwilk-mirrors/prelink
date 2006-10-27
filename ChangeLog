@@ -1,5 +1,16 @@
 2006-10-24  Richard Sandiford  <richard@codesourcery.com>
 
+	* src/prelink.h (READWRITEPROTOSIZE): New macro.  Instantiate
+	READWRITEPROTO for big and little endian.  Add prototypes for
+	native-endian functions (buf_read_uneNN, read_uneNN, buf_write_neNN
+	and write_neNN).  Replace uses of READWRITEPROTO with uses of
+	this macro.
+	* src/data.c (BUFREADUNE, READUNE, WRITENE, BUFWRITENE): New macros.
+	(READWRITESIZE): New macro.  Instantiate READWRITE for big and
+	little endian.  Instantiate BUFREADUNE, READUNE, WRITENE
+	and BUFWRITENE.  Replace uses of READWRITE with uses of this macro.
+	* src/arch-sh.c (read_une32, write_ne32, buf_write_ne32): Delete.
+
 	* src/prelink.h (PLArch): Add an arch_prelink_conflict callback.
 	* src/conflict.c (prelink_build_conflicts): If defined, call it
 	for each dependency.

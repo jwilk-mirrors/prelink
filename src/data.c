@@ -45,7 +45,52 @@ write_##le##nn (DSO *dso, GElf_Addr addr, uint##nn##_t val)	\
   return 0;							\
 }
 
+#define BUFREADUNE(nn)						\
+uint##nn##_t							\
+buf_read_une##nn (DSO *dso, unsigned char *buf)			\
+{								\
+  if (dso->ehdr.e_ident[EI_DATA] == ELFDATA2LSB)		\
+    return buf_read_ule32 (buf);				\
+  else								\
+    return buf_read_ube32 (buf);				\
+}
+
+#define READUNE(nn)						\
+uint##nn##_t							\
+read_une##nn (DSO *dso, GElf_Addr addr)				\
+{								\
+  if (dso->ehdr.e_ident[EI_DATA] == ELFDATA2LSB)		\
+    return read_ule##nn (dso, addr);				\
+  else								\
+    return read_ube##nn (dso, addr);				\
+}
+
+#define WRITENE(nn)						\
+void								\
+write_ne##nn (DSO *dso, GElf_Addr addr, uint##nn##_t val)	\
+{								\
+  if (dso->ehdr.e_ident[EI_DATA] == ELFDATA2LSB)		\
+    write_le##nn (dso, addr, val);				\
+  else								\
+    write_be##nn (dso, addr, val);				\
+}
+
+#define BUFWRITENE(nn)						\
+void								\
+buf_write_ne##nn (DSO *dso, unsigned char *buf,			\
+		  uint##nn##_t val)				\
+{								\
+  if (dso->ehdr.e_ident[EI_DATA] == ELFDATA2LSB)		\
+    buf_write_le##nn (buf, val);				\
+  else								\
+    buf_write_be##nn (buf, val);				\
+}
+
 #define READWRITE(le,nn) UREAD(le,nn) WRITE(le,nn)
+#define READWRITESIZE(nn) \
+  READWRITE(le,nn) READWRITE(be,nn) \
+  BUFREADUNE(nn) READUNE(nn) \
+  WRITENE(nn) BUFWRITENE(nn)
 
 unsigned char *
 get_data (DSO *dso, GElf_Addr addr, int *secp)
@@ -184,12 +229,9 @@ buf_write_be64 (unsigned char *data, uint64_t val)
 }
 
 READWRITE(,8)
-READWRITE(le,16)
-READWRITE(be,16)
-READWRITE(le,32)
-READWRITE(be,32)
-READWRITE(le,64)
-READWRITE(be,64)
+READWRITESIZE(16)
+READWRITESIZE(32)
+READWRITESIZE(64)
 
 const char *
 strptr (DSO *dso, int sec, off_t offset)

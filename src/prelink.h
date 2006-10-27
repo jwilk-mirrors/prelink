@@ -212,13 +212,18 @@ uint##nn##_t buf_read_u##le##nn (unsigned char *data);		\
 uint##nn##_t read_u##le##nn (DSO *dso, GElf_Addr addr);		\
 void buf_write_##le##nn (unsigned char *data, uint##nn##_t val);\
 int write_##le##nn (DSO *dso, GElf_Addr addr, uint##nn##_t val);
+#define READWRITEPROTOSIZE(nn)					\
+READWRITEPROTO(le,nn)						\
+READWRITEPROTO(be,nn)						\
+uint##nn##_t buf_read_une##nn (DSO *dso, unsigned char *data);	\
+uint##nn##_t read_une##nn (DSO *dso, GElf_Addr addr);		\
+void buf_write_ne##nn (DSO *dso, unsigned char *data,		\
+		       uint##nn##_t val);			\
+void write_ne##nn (DSO *dso, GElf_Addr addr, uint##nn##_t val);
 READWRITEPROTO(,8)
-READWRITEPROTO(le,16)
-READWRITEPROTO(be,16)
-READWRITEPROTO(le,32)
-READWRITEPROTO(be,32)
-READWRITEPROTO(le,64)
-READWRITEPROTO(be,64)
+READWRITEPROTOSIZE(16)
+READWRITEPROTOSIZE(32)
+READWRITEPROTOSIZE(64)
 #undef READWRITEPROTO
 const char * strptr (DSO *dso, int sec, off_t offset);
 

@@ -28,33 +28,6 @@
 
 #include "prelink.h"
 
-static inline uint32_t
-read_une32 (DSO *dso, GElf_Addr addr)
-{
-  if (dso->ehdr.e_ident[EI_DATA] == ELFDATA2LSB)
-    return read_ule32 (dso, addr);
-  else
-    return read_ube32 (dso, addr);
-}
-
-static inline void
-write_ne32 (DSO *dso, GElf_Addr addr, uint32_t value)
-{
-  if (dso->ehdr.e_ident[EI_DATA] == ELFDATA2LSB)
-    write_le32 (dso, addr, value);
-  else
-    write_be32 (dso, addr, value);
-}
-
-static inline void
-buf_write_ne32 (DSO *dso, unsigned char *buf, uint32_t value)
-{
-  if (dso->ehdr.e_ident[EI_DATA] == ELFDATA2LSB)
-    buf_write_le32 (buf, value);
-  else
-    buf_write_be32 (buf, value);
-}
-
 static int
 sh_adjust_dyn (DSO *dso, int n, GElf_Dyn *dyn, GElf_Addr start,
 		 GElf_Addr adjust)
