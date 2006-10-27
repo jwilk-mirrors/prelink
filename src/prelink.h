@@ -137,6 +137,7 @@ struct PLArch
 			       GElf_Rel *rel, GElf_Addr reladdr);
   int (*prelink_conflict_rela) (DSO *dso, struct prelink_info *info,
   				GElf_Rela *rela, GElf_Addr relaaddr);
+  int (*arch_prelink_conflict) (DSO *dso, struct prelink_info *info);
   int (*apply_conflict_rela) (struct prelink_info *info, GElf_Rela *rela,
 			      char *buf);
   int (*apply_rel) (struct prelink_info *info, GElf_Rel *rel, char *buf);

@@ -1,5 +1,9 @@
 2006-10-24  Richard Sandiford  <richard@codesourcery.com>
 
+	* src/prelink.h (PLArch): Add an arch_prelink_conflict callback.
+	* src/conflict.c (prelink_build_conflicts): If defined, call it
+	for each dependency.
+
 	* src/prelink.h (PLArch): Make the arch_prelink callback take
 	a "struct prelink_info *" argument, not a "DSO *" argument.
 	* src/prelink.c (prelink): Adjust call accordingly.

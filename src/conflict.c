@@ -571,6 +571,10 @@ prelink_build_conflicts (struct prelink_info *info)
 		}
 	    }
 
+	  if (dso->arch->arch_prelink_conflict
+	      && dso->arch->arch_prelink_conflict (dso, info))
+	    goto error_out;
+
 	  for (conflict = info->curconflicts; conflict;
 	       conflict = conflict->next)
 	    if (! conflict->used)
