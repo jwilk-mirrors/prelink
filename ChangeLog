@@ -1,5 +1,32 @@
 2006-10-24  Richard Sandiford  <richard@codesourcery.com>
 
+	* src/prelink.h (DT_MIPS_RLD_VERSION): Define.
+	(DT_MIPS_TIME_STAMP): Likewise.
+	(DT_MIPS_ICHECKSUM): Likewise.
+	(DT_MIPS_IVERSION): Likewise.
+	(DT_MIPS_FLAGS): Likewise.
+	(DT_MIPS_BASE_ADDRESS): Likewise.
+	(DT_MIPS_CONFLICT): Likewise.
+	(DT_MIPS_LIBLIST): Likewise.
+	(DT_MIPS_LOCAL_GOTNO): Likewise.
+	(DT_MIPS_CONFLICTNO): Likewise.
+	(DT_MIPS_LIBLISTNO): Likewise.
+	(DT_MIPS_SYMTABNO): Likewise.
+	(DT_MIPS_UNREFEXTNO): Likewise.
+	(DT_MIPS_GOTSYM): Likewise.
+	(DT_MIPS_HIPAGENO): Likewise.
+	(DT_MIPS_RLD_MAP): Likewise.
+	(R_MIPS_TLS_DTPMOD): Likewise.
+	(R_MIPS_TLS_DTPREL): Likewise.
+	(R_MIPS_TLS_TPREL): Likewise.
+	(R_MIPS_GLOB_DAT): Likewise.
+	(DSO): Add info_DT_MIPS_LOCAL_GOTNO, info_DT_MIPS_GOTSYM,
+	and info_DT_MIPS_SYMTABNO.
+
+	* src/dso.c (read_dynamic): Initialize the new DSO fields.
+	(adjust_symbol_p): Handle stub values on MIPS.
+	* src/prelink.c (prelink_prepare): Handle SHT_DYNAMIC and
+	SHT_MIPS_REGINFO on MIPS.
 	* src/space.c (find_readonly_space): Don't place the new section
 	in the PT_PHDR segment.
 

@@ -438,6 +438,15 @@ prelink_prepare (DSO *dso)
 	       from this set only (and SHT_REL) in ET_DYN just needs
 	       adjusting the rest of the library.  */
 	    break;
+	  case SHT_DYNAMIC:
+	  case SHT_MIPS_REGINFO:
+	    /* The same applies to these sections on MIPS.  The convention
+	       is to put .dynamic and .reginfo near the beginning of the
+	       read-only segment, before the program text.  No relocations
+	       may refer to them.  */
+	    if (dso->ehdr.e_machine == EM_MIPS)
+	      break;
+	    /* FALLTHROUGH */
 	  default:
 	    /* The rest of sections are not safe.  */
 	    safe = 0;

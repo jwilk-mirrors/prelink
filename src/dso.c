@@ -107,6 +107,15 @@ read_dynamic (DSO *dso)
 		    dso->info_DT_GNU_HASH = dyn.d_un.d_val;
 		    dso->info_set_mask |= (1ULL << DT_GNU_HASH_BIT);
 		  }
+		if (dso->ehdr.e_machine == EM_MIPS)
+		  {
+		    if (dyn.d_tag == DT_MIPS_LOCAL_GOTNO)
+		      dso->info_DT_MIPS_LOCAL_GOTNO = dyn.d_un.d_val;
+		    else if (dyn.d_tag == DT_MIPS_GOTSYM)
+		      dso->info_DT_MIPS_GOTSYM = dyn.d_un.d_val;
+		    else if (dyn.d_tag == DT_MIPS_SYMTABNO)
+		      dso->info_DT_MIPS_SYMTABNO = dyn.d_un.d_val;
+		  }
 	      }
 	    if (ndx < maxndx)
 	      break;
@@ -1023,6 +1032,18 @@ adjust_symbol_p (DSO *dso, GElf_Sym *sym)
       && GELF_ST_TYPE (sym->st_info) <= STT_FUNC)
     /* This is problematic.  How do we find out if
        we should relocate this?  Assume we should.  */
+    return 1;
+
+  /* If a MIPS object does not define a symbol, but has a lazy binding
+     stub for it, st_value will point to that stub.  Note that unlike
+     other targets, these stub addresses never participate in symbol
+     lookup; the stubs can only be called by the object that defines them.
+     st_values are only used in this way so that the associated GOT entry
+     can store a Quickstart value without losing the original stub
+     address.  */
+  if (dso->ehdr.e_machine == EM_MIPS
+      && sym->st_shndx == SHN_UNDEF
+      && sym->st_value != 0)
     return 1;
 
   return (sym->st_shndx > SHN_UNDEF
