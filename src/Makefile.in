@@ -106,7 +106,7 @@ sbin_PROGRAMS = prelink
 bin_PROGRAMS = execstack
 
 arch_SOURCES = arch-i386.c arch-alpha.c arch-ppc.c arch-ppc64.c \
-	       arch-sparc.c arch-sparc64.c arch-x86_64.c \
+	       arch-sparc.c arch-sparc64.c arch-x86_64.c arch-mips.c \
 	       arch-s390.c arch-s390x.c arch-arm.c arch-sh.c arch-ia64.c
 
 common_SOURCES = checksum.c data.c dso.c dwarf2.c dwarf2.h fptr.c fptr.h     \
@@ -138,8 +138,8 @@ am__objects_1 = checksum.$(OBJEXT) data.$(OBJEXT) dso.$(OBJEXT) \
 am__objects_2 = arch-i386.$(OBJEXT) arch-alpha.$(OBJEXT) \
 	arch-ppc.$(OBJEXT) arch-ppc64.$(OBJEXT) arch-sparc.$(OBJEXT) \
 	arch-sparc64.$(OBJEXT) arch-x86_64.$(OBJEXT) \
-	arch-s390.$(OBJEXT) arch-s390x.$(OBJEXT) arch-arm.$(OBJEXT) \
-	arch-sh.$(OBJEXT) arch-ia64.$(OBJEXT)
+	arch-mips.$(OBJEXT) arch-s390.$(OBJEXT) arch-s390x.$(OBJEXT) \
+	arch-arm.$(OBJEXT) arch-sh.$(OBJEXT) arch-ia64.$(OBJEXT)
 am_execstack_OBJECTS = execstack.$(OBJEXT) $(am__objects_1) \
 	$(am__objects_2)
 execstack_OBJECTS = $(am_execstack_OBJECTS)
@@ -163,10 +163,10 @@ depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/arch-alpha.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/arch-arm.Po ./$(DEPDIR)/arch-i386.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/arch-ia64.Po ./$(DEPDIR)/arch-ppc.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/arch-ppc64.Po ./$(DEPDIR)/arch-s390.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/arch-s390x.Po ./$(DEPDIR)/arch-sh.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/arch-sparc.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/arch-ia64.Po ./$(DEPDIR)/arch-mips.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/arch-ppc.Po ./$(DEPDIR)/arch-ppc64.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/arch-s390.Po ./$(DEPDIR)/arch-s390x.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/arch-sh.Po ./$(DEPDIR)/arch-sparc.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/arch-sparc64.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/arch-x86_64.Po ./$(DEPDIR)/cache.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/canonicalize.Po ./$(DEPDIR)/checksum.Po \
@@ -279,6 +279,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/arch-arm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/arch-i386.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/arch-ia64.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/arch-mips.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/arch-ppc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/arch-ppc64.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/arch-s390.Po@am__quote@

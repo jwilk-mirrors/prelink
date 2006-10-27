@@ -1,5 +1,9 @@
 2006-10-24  Richard Sandiford  <richard@codesourcery.com>
 
+	* src/Makefile.am (arch_SOURCES): Add arch-mips.c
+	* src/Makefile.in: Regenerate.
+	* src/arch-mips.c: New file.
+
 	* src/prelink.h (DT_MIPS_RLD_VERSION): Define.
 	(DT_MIPS_TIME_STAMP): Likewise.
 	(DT_MIPS_ICHECKSUM): Likewise.
