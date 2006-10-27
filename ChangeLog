@@ -1,5 +1,8 @@
 2006-10-24  Richard Sandiford  <richard@codesourcery.com>
 
+	* testsuite/tls3.sh: Use -fpic for MIPS too.
+	* testsuite/reloc2.sh: Likewise.
+
 	* testsuite/reloc4.sh: Use -mxgot when compiling for MIPS targets.
 	* testsuite/reloc5.c (main): Make the printed inline asm globalize
 	testzero.
