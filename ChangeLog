@@ -1,5 +1,9 @@
 2006-10-24  Richard Sandiford  <richard@codesourcery.com>
 
+	* testsuite/reloc4.sh: Use -mxgot when compiling for MIPS targets.
+	* testsuite/reloc5.c (main): Make the printed inline asm globalize
+	testzero.
+
 	* testsuite/shuffle2.c (testzero): Globalize asm definition.
 
 	* src/Makefile.am (arch_SOURCES): Add arch-mips.c
