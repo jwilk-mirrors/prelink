@@ -279,6 +279,7 @@ READWRITEPROTOSIZE(16)
 READWRITEPROTOSIZE(32)
 READWRITEPROTOSIZE(64)
 #undef READWRITEPROTO
+#undef READWRITEPROTOSIZE
 const char * strptr (DSO *dso, int sec, off_t offset);
 void init_data_iterator (struct data_iterator *it, DSO *dso, GElf_Addr addr);
 unsigned char *get_data_from_iterator (struct data_iterator *it,
