@@ -1,5 +1,21 @@
 2006-10-24  Richard Sandiford  <richard@codesourcery.com>
 
+	* src/prelink.h (PLArch): Make the arch_prelink callback take
+	a "struct prelink_info *" argument, not a "DSO *" argument.
+	* src/prelink.c (prelink): Adjust call accordingly.
+	* src/arch-alpha.c (alpha_arch_prelink): Adjust definition accordingly.
+	* src/arch-arm.c (arm_arch_prelink): Likewise.
+	* src/arch-cris.c (cris_arch_prelink): Likewise.
+	* src/arch-i386.c (i386_arch_prelink): Likewise.
+	* src/arch-ia64.c (ia64_arch_prelink): Likewise.
+	* src/arch-ppc.c (ppc_arch_prelink): Likewise.
+	* src/arch-s390.c (s390_arch_prelink): Likewise
+	* src/arch-s390x.c (s390x_arch_prelink): Likewise
+	* src/arch-sh.c (sh_arch_prelink): Likewise.
+	* src/arch-sparc64.c (sparc64_arch_prelink): Likewise.
+	* src/arch-sparc.c (sparc_arch_prelink): Likewise
+	* src/arch-x86_64.c (x86_64_arch_prelink): Likewise.
+
 	* src/prelink.h (PLArch): Add an arch_adjust callback.
 	* src/dso.c (adjust_dso): Use it, if defined.
 

@@ -668,8 +668,9 @@ ppc_arch_pre_prelink (DSO *dso)
 }
 
 static int
-ppc_arch_prelink (DSO *dso)
+ppc_arch_prelink (struct prelink_info *info)
 {
+  DSO *dso = info->dso;
   Elf32_Addr plt = dso->info[DT_PLTGOT];
 
   if (plt && !dynamic_info_is_set (dso, DT_PPC_GOT_BIT))

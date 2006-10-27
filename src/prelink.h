@@ -156,7 +156,7 @@ struct PLArch
 #define RTYPE_CLASS_TLS		(8|4)
   int (*reloc_class) (int);
   int (*arch_pre_prelink) (DSO *dso);
-  int (*arch_prelink) (DSO *dso);
+  int (*arch_prelink) (struct prelink_info *info);
   int (*arch_undo_prelink) (DSO *dso);
   int (*undo_prelink_rel) (DSO *dso, GElf_Rel *rel, GElf_Addr reladdr);
   int (*undo_prelink_rela) (DSO *dso, GElf_Rela *rela, GElf_Addr relaaddr);

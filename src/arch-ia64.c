@@ -418,14 +418,16 @@ ia64_create_opd (struct prelink_info *info, int first, int last, int plt)
 }
 
 static int
-ia64_arch_prelink (DSO *dso)
+ia64_arch_prelink (struct prelink_info *info)
 {
+  DSO *dso;
   int plt = -1, got = -1, i;
   const char *name;
 
   /* Write address of .plt + 0x30 into .got[1].
      .plt + 0x30 is what .IA_64.pltoff[0] contains unless prelinking.  */
 
+  dso = info->dso;
   for (i = 1; i < dso->ehdr.e_shnum; i++)
     if (dso->shdr[i].sh_type == SHT_PROGBITS)
       {

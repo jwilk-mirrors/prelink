@@ -418,10 +418,12 @@ s390x_need_rel_to_rela (DSO *dso, int first, int last)
 }
 
 static int
-s390x_arch_prelink (DSO *dso)
+s390x_arch_prelink (struct prelink_info *info)
 {
+  DSO *dso;
   int i;
 
+  dso = info->dso;
   if (dso->info[DT_PLTGOT])
     {
       /* Write address of .plt + 0x2e into got[1].

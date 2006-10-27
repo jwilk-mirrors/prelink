@@ -300,10 +300,12 @@ sh_need_rel_to_rela (DSO *dso, int first, int last)
 }
 
 static int
-sh_arch_prelink (DSO *dso)
+sh_arch_prelink (struct prelink_info *info)
 {
+  DSO *dso;
   int i;
 
+  dso = info->dso;
   if (dso->info[DT_PLTGOT])
     {
       /* Write address of .plt + 36 into got[1].

@@ -524,7 +524,7 @@ sparc64_need_rel_to_rela (DSO *dso, int first, int last)
 }
 
 static int
-sparc64_arch_prelink (DSO *dso)
+sparc64_arch_prelink (struct prelink_info *info)
 {
   return 0;
 }

@@ -941,7 +941,7 @@ prelink (DSO *dso, struct prelink_entry *ent)
 	}
     }
 
-  if (dso->arch->arch_prelink && dso->arch->arch_prelink (dso))
+  if (dso->arch->arch_prelink && dso->arch->arch_prelink (&info))
     goto error_out;
 
   if (dso->arch->read_opd && dso->arch->read_opd (dso, ent))

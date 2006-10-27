@@ -367,9 +367,12 @@ alpha_need_rel_to_rela (DSO *dso, int first, int last)
 }
 
 static int
-alpha_arch_prelink (DSO *dso)
+alpha_arch_prelink (struct prelink_info *info)
 {
+  DSO *dso;
+
   /* Correct sh_entsize on .plt sections.  */
+  dso = info->dso;
   if (dso->info[DT_PLTGOT])
     {
       int sec = addr_to_sec (dso, dso->info[DT_PLTGOT] + 16);
