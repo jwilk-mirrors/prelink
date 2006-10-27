@@ -206,6 +206,28 @@ int strtabfind (DSO *dso, int strndx, const char *name);
 int shstrtabadd (DSO *dso, const char *name);
 
 /* data.c */
+
+/* Used for reading consecutive blocks of data from a DSO.  */
+struct data_iterator {
+  /* The DSO that is being read.  */
+  DSO *dso;
+
+  /* The data block that contained the last byte to be read.
+     NULL if no data has been read yet or if the end of the
+     DSO has been reached.  */
+  Elf_Data *data;
+
+  /* The section that contains DATA, when DATA is nonnull.  */
+  int sec;
+
+  /* The address of the next byte.  */
+  GElf_Addr addr;
+
+  /* The offset of the next byte from the start of SEC, when DATA
+     is nonnull.  */
+  GElf_Addr sec_offset;
+};
+
 unsigned char * get_data (DSO *dso, GElf_Addr addr, int *scnp);
 #define READWRITEPROTO(le,nn)					\
 uint##nn##_t buf_read_u##le##nn (unsigned char *data);		\
@@ -226,6 +248,10 @@ READWRITEPROTOSIZE(32)
 READWRITEPROTOSIZE(64)
 #undef READWRITEPROTO
 const char * strptr (DSO *dso, int sec, off_t offset);
+void init_data_iterator (struct data_iterator *it, DSO *dso, GElf_Addr addr);
+unsigned char *get_data_from_iterator (struct data_iterator *it,
+				       GElf_Addr size);
+int get_sym_from_iterator (struct data_iterator *it, GElf_Sym *sym);
 
 #define PL_ARCH \
 static struct PLArch plarch __attribute__((section("pl_arch"),used))

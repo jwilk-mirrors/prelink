@@ -1,5 +1,13 @@
 2006-10-24  Richard Sandiford  <richard@codesourcery.com>
 
+	* src/prelink.h (data_iterator): New structure.
+	(init_data_iterator): Declare.
+	(get_data_from_iterator): Likewise.
+	(get_sym_from_iterator): Likewise.
+	* src/data.c (init_data_iterator): New function.
+	(get_data_from_iterator): Likewise.
+	(get_sym_from_iterator): Likewise.
+
 	* src/prelink.h (READWRITEPROTOSIZE): New macro.  Instantiate
 	READWRITEPROTO for big and little endian.  Add prototypes for
 	native-endian functions (buf_read_uneNN, read_uneNN, buf_write_neNN

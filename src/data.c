@@ -112,6 +112,79 @@ get_data (DSO *dso, GElf_Addr addr, int *secp)
   return NULL;
 }
 
+/* Initialize IT so that the first byte it provides is address ADDR
+   of DSO.  */
+
+void
+init_data_iterator (struct data_iterator *it, DSO *dso, GElf_Addr addr)
+{
+  it->dso = dso;
+  it->data = NULL;
+  it->addr = addr;
+}
+
+/* Return a pointer to the next SIZE bytes pointed to by IT, and move
+   IT to the end of the returned block.  Return null if the data could
+   not be read for some reason.  */
+
+unsigned char *
+get_data_from_iterator (struct data_iterator *it, GElf_Addr size)
+{
+  unsigned char *ptr;
+
+  /* If we're at the end of a data block, move onto the next.  */
+  if (it->data && it->data->d_off + it->data->d_size == it->sec_offset)
+    it->data = elf_getdata (it->dso->scn[it->sec], it->data);
+
+  if (it->data == NULL)
+    {
+      /* Find out which section contains the next byte.  */
+      it->sec = addr_to_sec (it->dso, it->addr);
+      if (it->sec < 0)
+	return NULL;
+
+      /* Fast-forward to the block that contains ADDR, if any.  */
+      it->sec_offset = it->addr - it->dso->shdr[it->sec].sh_addr;
+      do
+	it->data = elf_getdata (it->dso->scn[it->sec], it->data);
+      while (it->data && it->data->d_off + it->data->d_size <= it->sec_offset);
+    }
+
+  /* Make sure that all the data we want is included in this block.  */
+  if (it->data == NULL
+      || it->data->d_off > it->sec_offset
+      || it->data->d_off + it->data->d_size < it->sec_offset + size)
+    return NULL;
+
+  ptr = (unsigned char *) it->data->d_buf + (it->sec_offset - it->data->d_off);
+  it->sec_offset += size;
+  it->addr += size;
+  return ptr;
+}
+
+/* Read the symbol pointed to by IT into SYM and move IT onto the
+   next symbol.  Return true on success.  */
+
+int
+get_sym_from_iterator (struct data_iterator *it, GElf_Sym *sym)
+{
+  GElf_Addr offset, size;
+  unsigned char *ptr;
+
+  size = gelf_fsize (it->dso->elf, ELF_T_SYM, 1, EV_CURRENT);
+  ptr = get_data_from_iterator (it, size);
+  if (ptr != NULL)
+    {
+      offset = ptr - (unsigned char *) it->data->d_buf;
+      if (offset % size == 0)
+	{
+	  gelfx_getsym (it->dso->elf, it->data, offset / size, sym);
+	  return 1;
+	}
+    }
+  return 0;
+}
+
 inline uint8_t
 buf_read_u8 (unsigned char *data)
 {
