@@ -1,3 +1,13 @@
+2006-10-27  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/dwarf2.c (adjust_dwarf2_ranges): Fix adjusting if end of range
+	is at the end of some section and there is padding before the
+	following one.
+
+2006-07-28  Alexandre Oliva  <aoliva@redhat.com>
+
+	* src/cache.c (deps_cmp): Avoid segfault if both a and b are NULL.
+
 2001-05-24  Jakub Jelinek  <jakub@redhat.com>
 
 	* The beginning.
