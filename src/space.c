@@ -247,9 +247,19 @@ find_readonly_space (DSO *dso, GElf_Shdr *add, GElf_Ehdr *ehdr,
 	int after = -1, min;
 
 	if (phdr[i].p_offset < ehdr->e_phoff)
-	  start += ehdr->e_phoff
-		   + ehdr->e_phnum * ehdr->e_phentsize
-		   - phdr[i].p_offset;
+	  {
+	    for (j = 0; j < ehdr->e_phnum; j++)
+	      if (phdr[j].p_type == PT_PHDR
+		  && phdr[j].p_offset == ehdr->e_phoff
+		  && phdr[j].p_filesz >= ehdr->e_phnum * ehdr->e_phentsize)
+		break;
+	    start += ehdr->e_phoff;
+	    if (j < ehdr->e_phnum)
+	      start += phdr[j].p_filesz;
+	    else
+	      start += ehdr->e_phnum * ehdr->e_phentsize;
+	    start -= phdr[i].p_offset;
+	  }
 	start = (start + add->sh_addralign - 1) & ~(add->sh_addralign - 1);
 	for (j = 1; j < ehdr->e_shnum; ++j)
 	  if ((shdr[j].sh_flags & SHF_ALLOC)
