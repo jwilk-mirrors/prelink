@@ -177,6 +177,7 @@ struct section_move *init_section_move (DSO *dso);
 void add_section (struct section_move *move, int sec);
 void remove_section (struct section_move *move, int sec);
 int reopen_dso (DSO *dso, struct section_move *move, const char *);
+int adjust_symbol_p (DSO *dso, GElf_Sym *sym);
 int check_dso (DSO *dso);
 int dso_is_rdwr (DSO *dso);
 void read_dynamic (DSO *dso);

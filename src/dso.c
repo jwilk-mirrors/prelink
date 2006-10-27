@@ -1011,6 +1011,26 @@ error_out:
   return 1;
 }
 
+/* Return true if the value of symbol SYM, which belongs to DSO,
+   should be treated as an address within the DSO, and should
+   therefore track DSO's relocations.  */
+
+int
+adjust_symbol_p (DSO *dso, GElf_Sym *sym)
+{
+  if (sym->st_shndx == SHN_ABS
+      && sym->st_value != 0
+      && GELF_ST_TYPE (sym->st_info) <= STT_FUNC)
+    /* This is problematic.  How do we find out if
+       we should relocate this?  Assume we should.  */
+    return 1;
+
+  return (sym->st_shndx > SHN_UNDEF
+	  && sym->st_shndx < dso->ehdr.e_shnum
+	  && ELF32_ST_TYPE (sym->st_info) != STT_TLS
+	  && RELOCATE_SCN (dso->shdr[sym->st_shndx].sh_flags));
+}
+
 static int
 adjust_symtab (DSO *dso, int n, GElf_Addr start, GElf_Addr adjust)
 {
@@ -1025,29 +1045,7 @@ adjust_symtab (DSO *dso, int n, GElf_Addr start, GElf_Addr adjust)
       for (ndx = 0; ndx < maxndx; ++ndx)
 	{
 	  gelfx_getsym (dso->elf, data, ndx, &sym);
-	  if (sym.st_shndx == SHN_ABS && sym.st_value != 0
-	      && GELF_ST_TYPE (sym.st_info) <= STT_FUNC)
-	    {
-	      /* This is problematic.  How do we find out if
-		 we should relocate this?  Assume we should.  */
-	      if (sym.st_value >= start)
-		{
-		  sym.st_value += adjust;
-		  sym.st_value &= dso->mask;
-		  gelfx_update_sym (dso->elf, data, ndx, &sym);
-		}
-	      continue;
-	    }
-
-	  if (sym.st_shndx <= SHN_UNDEF
-	      || sym.st_shndx >= dso->ehdr.e_shnum
-	      || ELF32_ST_TYPE (sym.st_info) == STT_TLS)
-	    continue;
-
-	  if (! RELOCATE_SCN (dso->shdr[sym.st_shndx].sh_flags))
-	    continue;
-
-	  if (sym.st_value >= start)
+	  if (adjust_symbol_p (dso, &sym) && sym.st_value >= start)
 	    {
 	      sym.st_value += adjust;
 	      gelfx_update_sym (dso->elf, data, ndx, &sym);

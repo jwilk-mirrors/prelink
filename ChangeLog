@@ -1,3 +1,9 @@
+2006-10-24  Richard Sandiford  <richard@codesourcery.com>
+
+	* src/prelink.h (adjust_symbol_p): Declare.
+	* src/dso.c (adjust_symbol_p): New function, extracted from...
+	(adjust_symtab): ...here.
+
 2006-10-27  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/dwarf2.c (adjust_dwarf2_ranges): Fix adjusting if end of range
