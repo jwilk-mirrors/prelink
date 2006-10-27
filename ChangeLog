@@ -1,5 +1,7 @@
 2006-10-24  Richard Sandiford  <richard@codesourcery.com>
 
+	* testsuite/shuffle2.c (testzero): Globalize asm definition.
+
 	* src/Makefile.am (arch_SOURCES): Add arch-mips.c
 	* src/Makefile.in: Regenerate.
 	* src/arch-mips.c: New file.
