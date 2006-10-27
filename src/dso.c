@@ -1293,6 +1293,10 @@ adjust_dso (DSO *dso, GElf_Addr start, GElf_Addr adjust)
 {
   int i;
 
+  if (dso->arch->arch_adjust
+      && dso->arch->arch_adjust (dso, start, adjust))
+    return 1;
+
   if (dso->ehdr.e_entry >= start)
     {
       dso->ehdr.e_entry += adjust;

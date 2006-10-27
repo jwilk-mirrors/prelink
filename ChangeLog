@@ -1,5 +1,8 @@
 2006-10-24  Richard Sandiford  <richard@codesourcery.com>
 
+	* src/prelink.h (PLArch): Add an arch_adjust callback.
+	* src/dso.c (adjust_dso): Use it, if defined.
+
 	* src/prelink.h (adjust_symbol_p): Declare.
 	* src/dso.c (adjust_symbol_p): New function, extracted from...
 	(adjust_symtab): ...here.

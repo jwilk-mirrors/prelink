@@ -121,6 +121,7 @@ struct PLArch
   int R_COPY;
   int R_JMP_SLOT;
   int R_RELATIVE;
+  int (*arch_adjust) (DSO *dso, GElf_Addr start, GElf_Addr adjust);
   int (*adjust_section) (DSO *dso, int n, GElf_Addr start, GElf_Addr adjust);
   int (*adjust_dyn) (DSO *dso, int n, GElf_Dyn *dyn, GElf_Addr start,
 		     GElf_Addr adjust);
