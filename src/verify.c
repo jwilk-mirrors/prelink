@@ -1,4 +1,4 @@
-/* Copyright (C) 2002, 2003 Red Hat, Inc.
+/* Copyright (C) 2002, 2003, 2006 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2002.
 
    This program is free software; you can redistribute it and/or modify
@@ -289,17 +289,17 @@ prelink_verify (const char *filename)
 
   dso2 = fdopen_dso (fd, filename);
   if (dso2 == NULL)
-    goto failure;
+    goto failure_unlink;
   fd = -1;
 
   if (prelink_prepare (dso2))
-    goto failure;
+    goto failure_unlink;
 
   if (ent->type == ET_DYN && relocate_dso (dso2, base))
-    goto failure;
+    goto failure_unlink;
 
   if (prelink (dso2, ent))
-    goto failure;
+    goto failure_unlink;
 
   unlink (ent->filename);
 
@@ -414,6 +414,8 @@ prelink_verify (const char *filename)
   close (fdundone);
   return 0;
 
+failure_unlink:
+  unlink (ent->filename);
 failure:
   if (fd != -1)
     close (fd);
