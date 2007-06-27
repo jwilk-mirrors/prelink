@@ -1,3 +1,8 @@
+2007-06-27  Jakub Jelinek  <jakub@redhat.com>
+
+	* testsuite/reloc2.sh: If libs aren't built with -fpic,
+	disable the test under SELinux in enforcing mode.
+
 2007-03-02  Sandra Loosemore  <sandra@codesourcery.com>
 
 	* doc/prelink.8: Spelling and grammar fixes.
