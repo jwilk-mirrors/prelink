@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2005 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2007 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -383,13 +383,16 @@ main (int argc, char *argv[])
       return failures;
     }
 
-  if (blacklist_from_config (prelink_conf))
+  if (read_config (prelink_conf))
+    return EXIT_FAILURE;
+
+  if (blacklist_from_config ())
     return EXIT_FAILURE;
 
   if (quick)
     prelink_load_cache ();
 
-  if (gather_config (prelink_conf))
+  if (gather_config ())
     return EXIT_FAILURE;
 
   while (remaining < argc)

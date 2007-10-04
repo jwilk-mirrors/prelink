@@ -1,4 +1,4 @@
-/* Copyright (C) 2002, 2003, 2006 Red Hat, Inc.
+/* Copyright (C) 2002, 2003, 2006, 2007 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2002.
 
    This program is free software; you can redistribute it and/or modify
@@ -227,7 +227,10 @@ prelink_verify (const char *filename)
       goto failure;
     }
 
-  if (gather_config (prelink_conf))
+  if (read_config (prelink_conf))
+    goto failure;
+
+  if (gather_config ())
     goto failure;
 
   if (gather_object (filename, 0, 0))

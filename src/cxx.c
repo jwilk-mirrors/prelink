@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2007 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -187,7 +187,6 @@ remove_redundant_cxx_conflicts (struct prelink_info *info)
       n = find_cxx_sym (info, info->conflict_rela[i].r_offset,
 			&fcs1, reloc_size);
 
-      name = (const char *) fcs1.strtab->d_buf + fcs1.sym.st_name;
       state = 0;
       if (n == -1)
 	continue;
@@ -199,6 +198,8 @@ remove_redundant_cxx_conflicts (struct prelink_info *info)
 			fcs1.dso->shdr[sec].sh_name);
       if (secname == NULL)
 	continue;
+
+      name = (const char *) fcs1.strtab->d_buf + fcs1.sym.st_name;
 
       for (k = 0; specials[k].prefix; ++k)
 	if (ELF32_ST_VISIBILITY (fcs1.sym.st_other) == STV_DEFAULT

@@ -116,8 +116,12 @@ echo 'int main () { return 0; }' \
   | $CCLINK -o quick2.tree/usr/bin/bin12 -pie -fPIE -xc - -xnone
 cat > quick2.tree/etc/prelink.conf <<EOF
 -b *.sh
--b *.py
--b b*11*r[hijk]*t
+-c quick2.tree/etc/prelink.conf.d/*.conf
+EOF
+mkdir quick2.tree/etc/prelink.conf.d
+echo '-b *.py' > quick2.tree/etc/prelink.conf.d/py.conf
+echo '-b b*11*r[hijk]*t' > quick2.tree/etc/prelink.conf.d/script.conf
+cat > quick2.tree/etc/prelink.conf.d/rest.conf <<EOF
 quick2.tree/usr/bin
 quick2.tree/lib
 quick2.tree/usr/lib

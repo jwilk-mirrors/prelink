@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -461,10 +461,11 @@ int prelink_undo (DSO *dso);
 int prelink_verify (const char *filename);
 
 int gather_object (const char *dir, int deref, int onefs);
-int gather_config (const char *config);
+int read_config (const char *config);
+int gather_config (void);
 int gather_check_libs (void);
 int add_to_blacklist (const char *name, int deref, int onefs);
-int blacklist_from_config (const char *config);
+int blacklist_from_config (void);
 
 FILE *execve_open (const char *path, char *const argv[], char *const envp[]);
 int execve_close (FILE *f);

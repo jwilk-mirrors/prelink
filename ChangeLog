@@ -1,3 +1,18 @@
+2007-10-04  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/prelink.h (read_config): New prototype.
+	(gather_config, blacklist_from_config): Remove argument.
+	* src/gather.c (struct config_line): New type.
+	(config_lines, config_end): New variables.
+	(read_config): New function.
+	(gather_config, blacklist_from_config): Walk config_lines
+	chain instead of reading the config file.
+	* src/verify.c (prelink_verify): Call read_config.  Don't
+	pass any argument to gather_config.
+	* src/main.c (main): Likewise.  Also for blacklist_from_config.
+	* testsuite/quick2.sh: Use new -c etc/prelink.conf.d/*.conf
+	feature in prelink.conf and multiple config snippets.
+
 2007-06-27  Jakub Jelinek  <jakub@redhat.com>
 
 	* testsuite/reloc2.sh: If libs aren't built with -fpic,

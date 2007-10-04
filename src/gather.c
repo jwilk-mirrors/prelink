@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -1014,13 +1014,20 @@ gather_object (const char *name, int deref, int onefs)
     return gather_binlib (name, &st);
 }
 
+static struct config_line
+{
+  struct config_line *next;
+  char line[1];
+} *config_lines, **config_end = &config_lines;
+
 int
-gather_config (const char *config)
+read_config (const char *config)
 {
   FILE *file = fopen (config, "r");
   char *line = NULL;
-  size_t len;
+  size_t len, llen;
   int ret = 0;
+  struct config_line *c;
 
   if (file == NULL)
     {
@@ -1028,12 +1035,9 @@ gather_config (const char *config)
       return 1;
     }
 
-  implicit = 1;
   do
     {
       ssize_t i = getline (&line, &len, file);
-      int deref = 0;
-      int onefs = 0;
       char *p;
 
       if (i < 0)
@@ -1047,6 +1051,62 @@ gather_config (const char *config)
 	*p = '\0';
 
       p = line + strspn (line, " \t");
+      if (p[0] == '-' && p[1] == 'c' && (p[2] == ' ' || p[2] == '\t'))
+        {
+	  glob_t g;
+	  p += 2 + strspn (p + 2, " \t");
+
+	  if (!glob (p, GLOB_BRACE, NULL, &g))
+	    {
+	      size_t n;
+
+	      for (n = 0; n < g.gl_pathc; ++n)
+		if (read_config (g.gl_pathv[n]))
+		  {
+		    ret = 1;
+		    break;
+		  }
+
+	      globfree (&g);
+	      if (ret)
+		break;
+	    }
+	  continue;
+        }
+
+      llen = strlen (p);
+      c = malloc (sizeof (*c) + llen);
+      if (c == NULL)
+	{
+	  error (0, ENOMEM, "Could not cache config file");
+	  ret = 1;
+	  break;
+	}
+
+      c->next = NULL;
+      memcpy (c->line, p, llen + 1);
+      *config_end = c;
+      config_end = &c->next;
+    }
+  while (!feof (file));
+
+  free (line);
+  fclose (file);
+  return ret;
+}
+
+int
+gather_config (void)
+{
+  struct config_line *c;
+  int ret = 0;
+
+  implicit = 1;
+  for (c = config_lines; c; c = c->next)
+    {
+      int deref = 0;
+      int onefs = 0;
+      char *p = c->line;
 
       while (*p == '-')
 	{
@@ -1054,7 +1114,7 @@ gather_config (const char *config)
 	    {
 	    case 'h': deref = 1; break;
 	    case 'l': onefs = 1; break;
-	    case 'b': *p = '\0'; continue;
+	    case 'b': p = ""; continue;
 	    default:
 	      error (0, 0, "Unknown directory option `%s'\n", p);
 	      break;
@@ -1097,10 +1157,8 @@ gather_config (const char *config)
 		break;
 	    }
 	}
-    } while (!feof (file));
+    }
 
-  free (line);
-  fclose (file);
   implicit = 0;
   return ret;
 }
@@ -1278,39 +1336,18 @@ add_blacklist_ext (const char *ext)
 }
 
 int
-blacklist_from_config (const char *config)
+blacklist_from_config (void)
 {
-  FILE *file = fopen (config, "r");
-  char *line = NULL;
-  size_t len;
+  struct config_line *c;
   int ret = 0;
 
-  if (file == NULL)
-    {
-      error (0, errno, "Can't open configuration file %s", config);
-      return 1;
-    }
-
   implicit = 1;
-  do
+  for (c = config_lines; c; c = c->next)
     {
-      ssize_t i = getline (&line, &len, file);
       int deref = 0;
       int onefs = 0;
       int blacklist = 0;
-      char *p;
-
-      if (i < 0)
-	break;
-
-      if (line[i - 1] == '\n')
-	line[i - 1] = '\0';
-
-      p = strchr (line, '#');
-      if (p != NULL)
-	*p = '\0';
-
-      p = line + strspn (line, " \t");
+      char *p = c->line;
 
       while (*p == '-')
 	{
@@ -1364,10 +1401,8 @@ blacklist_from_config (const char *config)
 		break;
 	    }
 	}
-    } while (!feof (file));
+    }
 
-  free (line);
-  fclose (file);
   implicit = 0;
   return ret;
 }
