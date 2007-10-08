@@ -16,6 +16,7 @@
    Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 
 #include <config.h>
+#include <alloca.h>
 #include <assert.h>
 #include <errno.h>
 #include <error.h>
@@ -26,24 +27,168 @@
 #include <sys/wait.h>
 #include "prelink.h"
 
+static struct
+  {
+    const char *prefix;
+    unsigned char prefix_len, st_info, check_pltref;
+  }
+specials[] =
+  {
+    /* G++ 3.0 ABI.  */
+    /* Virtual table.  */
+    { "_ZTV", 4, GELF_ST_INFO (STB_WEAK, STT_OBJECT), 1 },
+    /* Typeinfo.  */
+    { "_ZTI", 4, GELF_ST_INFO (STB_WEAK, STT_OBJECT), 0 },
+    /* G++ 2.96-RH ABI.  */
+    /* Virtual table.  */
+    { "__vt_", 5, GELF_ST_INFO (STB_WEAK, STT_OBJECT), 0 },
+    { NULL, 0, 0, 0 }
+  };
+
+struct find_cxx_sym_valsize
+{
+  GElf_Addr start;
+  GElf_Addr end;
+  unsigned int idx;
+  unsigned char mark;
+};
+
+struct find_cxx_sym_cache
+{
+  Elf_Data *symtab, *strtab;
+  int symsec, strsec, count;
+  struct find_cxx_sym_valsize vals[];
+};
+
 struct find_cxx_sym
 {
   DSO *dso;
   int n;
+  struct find_cxx_sym_cache *cache;
   struct prelink_entry *ent;
   Elf_Data *symtab, *strtab;
   int symsec, strsec;
+  int lastndx;
   GElf_Sym sym;
 };
 
 static int
+cachecmp (const void *a, const void *b)
+{
+  GElf_Addr va = ((const struct find_cxx_sym_valsize *) a)->start;
+  GElf_Addr vb = ((const struct find_cxx_sym_valsize *) b)->start;
+
+  if (va < vb)
+    return -1;
+  if (va > vb)
+    return 1;
+
+  va = ((const struct find_cxx_sym_valsize *) a)->end;
+  vb = ((const struct find_cxx_sym_valsize *) b)->end;
+
+  if (va < vb)
+    return -1;
+
+  return va > vb;
+}
+
+static struct find_cxx_sym_cache *
+create_cache (DSO *dso, int plt)
+{
+  Elf_Data *symtab, *strtab;
+  Elf_Scn *scn;
+  int symsec, strsec, ndx, dndx, maxndx;
+  struct find_cxx_sym_cache *cache;
+  GElf_Addr top;
+
+  symsec = addr_to_sec (dso, dso->info[DT_SYMTAB]);
+  if (symsec == -1)
+    return (struct find_cxx_sym_cache *) -1UL;
+  scn = dso->scn[symsec];
+  symtab = elf_getdata (scn, NULL);
+  assert (elf_getdata (scn, symtab) == NULL);
+  strsec = addr_to_sec (dso, dso->info[DT_STRTAB]);
+  if (strsec == -1)
+    return (struct find_cxx_sym_cache *) -1UL;
+  scn = dso->scn[strsec];
+  strtab = elf_getdata (scn, NULL);
+  assert (elf_getdata (scn, strtab) == NULL);
+  maxndx = symtab->d_size / dso->shdr[symsec].sh_entsize;
+
+  cache = malloc (sizeof (*cache) + sizeof (cache->vals[0]) * maxndx);
+  if (cache == NULL)
+    {
+      error (0, ENOMEM, "%s: Could load symbol table", dso->filename);
+      return NULL;
+    }
+
+  cache->symsec = symsec;
+  cache->strsec = strsec;
+  cache->symtab = symtab;
+  cache->strtab = strtab;
+  for (ndx = 0, dndx = 0; ndx < maxndx; ++ndx)
+    {
+      GElf_Sym sym;
+      const char *name;
+      int k;
+
+      gelfx_getsym (dso->elf, symtab, ndx, &sym);
+      if (plt)
+	{
+	  if (sym.st_shndx != SHN_UNDEF || sym.st_value == 0)
+	    continue;
+	}
+      else if (sym.st_shndx == SHN_UNDEF)
+	continue;
+      cache->vals[dndx].start = sym.st_value;
+      cache->vals[dndx].end = sym.st_value + sym.st_size;
+      cache->vals[dndx].idx = ndx;
+      cache->vals[dndx].mark = 0;
+      name = (const char *) strtab->d_buf + sym.st_name;
+      if (!plt && ELF32_ST_VISIBILITY (sym.st_other) == STV_DEFAULT)
+	for (k = 0; specials[k].prefix; ++k)
+	  if (sym.st_info == specials[k].st_info
+	      && strncmp (name, specials[k].prefix,
+			  specials[k].prefix_len) == 0)
+	    {
+	      cache->vals[dndx].mark = 1;
+	      break;
+	    }
+      ++dndx;
+    }
+
+  maxndx = dndx;
+  qsort (cache->vals, maxndx, sizeof (cache->vals[0]), cachecmp);
+
+  if (!plt)
+    {
+      for (top = 0, ndx = 0; ndx < maxndx; ++ndx)
+	{
+	  if (cache->vals[ndx].start < top
+	      || (ndx < maxndx - 1
+		  && cache->vals[ndx].end > cache->vals[ndx + 1].start))
+	    cache->vals[ndx].mark = 0;
+	  if (cache->vals[ndx].end > top)
+	    top = cache->vals[ndx].end;
+	}
+
+      for (ndx = dndx = 0; ndx < maxndx; ++ndx)
+	if (cache->vals[ndx].mark)
+	  cache->vals[dndx++] = cache->vals[ndx];
+    }
+  cache->count = dndx;
+  return cache;
+}
+
+static int
 find_cxx_sym (struct prelink_info *info, GElf_Addr addr,
-	      struct find_cxx_sym *fcs, int reloc_size)
+	      struct find_cxx_sym *fcs, int reloc_size,
+	      struct find_cxx_sym_cache **cache)
 {
   int n, ndeps = info->ent->ndepends + 1;
-  int ndx, maxndx;
+  unsigned int hi, lo, mid;
   DSO *dso = NULL;
-  Elf_Scn *scn;
+  struct find_cxx_sym_cache *c;
 
   if (fcs->dso == NULL
       || addr < fcs->dso->base
@@ -66,44 +211,51 @@ find_cxx_sym (struct prelink_info *info, GElf_Addr addr,
 	}
 
       assert (n < ndeps);
+
+      if (cache[n] == NULL)
+	{
+	  cache[n] = create_cache (dso, 0);
+	  if (cache[n] == NULL)
+	    return -2;
+	}
+      if (cache[n] == (struct find_cxx_sym_cache *) -1UL)
+	return -1;
+
       fcs->n = n;
       fcs->ent = n ? info->ent->depends[n - 1] : info->ent;
       fcs->dso = dso;
-      fcs->symsec = addr_to_sec (dso, dso->info[DT_SYMTAB]);
-      if (fcs->symsec == -1)
-	{
-	  fcs->ent = NULL;
-	  return -1;
-	}
-      scn = dso->scn[fcs->symsec];
-      fcs->symtab = elf_getdata (scn, NULL);
-      assert (elf_getdata (scn, fcs->symtab) == NULL);
-      fcs->strsec = addr_to_sec (dso, dso->info[DT_STRTAB]);
-      if (fcs->strsec == -1)
-	{
-	  fcs->ent = NULL;
-	  return -1;
-	}
-      scn = dso->scn[fcs->strsec];
-      fcs->strtab = elf_getdata (scn, NULL);
-      assert (elf_getdata (scn, fcs->strtab) == NULL);
+      fcs->cache = cache[n];
+      fcs->symsec = fcs->cache->symsec;
+      fcs->symtab = fcs->cache->symtab;
+      fcs->strsec = fcs->cache->strsec;
+      fcs->strtab = fcs->cache->strtab;
+      fcs->lastndx = -1;
     }
   else
     dso = fcs->dso;
 
-  maxndx = fcs->symtab->d_size / dso->shdr[fcs->symsec].sh_entsize;
-  for (ndx = 0; ndx < maxndx; ++ndx)
+  c = fcs->cache;
+  lo = 0;
+  hi = c->count;
+  while (lo < hi)
     {
-      gelfx_getsym (dso->elf, fcs->symtab, ndx, &fcs->sym);
-      if (fcs->sym.st_value <= addr
-	  && fcs->sym.st_value + fcs->sym.st_size >= addr + reloc_size)
-	break;
+      mid = (lo + hi) / 2;
+      if (c->vals[mid].start <= addr)
+	{
+	  if (c->vals[mid].end >= addr + reloc_size)
+	    {
+	      gelfx_getsym (dso->elf, fcs->symtab, c->vals[mid].idx,
+			    &fcs->sym);
+	      fcs->lastndx = mid;
+	      return c->vals[mid].idx;
+	    }
+	  lo = mid + 1;
+	}
+      else
+	hi = mid;
     }
 
-  if (ndx == maxndx)
-    return -1;
-
-  return ndx;
+  return -1;
 }
 
 /* The idea here is that C++ virtual tables are always emitted
@@ -116,7 +268,8 @@ int
 remove_redundant_cxx_conflicts (struct prelink_info *info)
 {
   int i, j, k, n, o, state, removed = 0;
-  int ndx, maxndx, sec;
+  int ndx, sec;
+  unsigned int hi, lo, mid;
   int reloc_type, reloc_size;
   struct find_cxx_sym fcs1, fcs2;
   char *mem1, *mem2;
@@ -126,24 +279,9 @@ remove_redundant_cxx_conflicts (struct prelink_info *info)
   Elf_Data *binsymtab = NULL;
   int binsymtabsec;
   struct prelink_conflict *conflict;
-  static struct
-    {
-      unsigned char *prefix;
-      unsigned char prefix_len, st_info, check_pltref;
-      unsigned char *section;
-    }
-  specials[] =
-    {
-      /* G++ 3.0 ABI.  */
-      /* Virtual table.  */
-      { "_ZTV", 4, GELF_ST_INFO (STB_WEAK, STT_OBJECT), 1, ".data" },
-      /* Typeinfo.  */
-      { "_ZTI", 4, GELF_ST_INFO (STB_WEAK, STT_OBJECT), 0, ".data" },
-      /* G++ 2.96-RH ABI.  */
-      /* Virtual table.  */
-      { "__vt_", 5, GELF_ST_INFO (STB_WEAK, STT_OBJECT), 0, ".data" },
-      { NULL, 0, 0, 0, NULL }
-    };
+  struct find_cxx_sym_cache **cache;
+  struct find_cxx_sym_cache *binsymcache = NULL;
+  int ret = 0;
 
   /* Don't bother doing this for non-C++ programs.  */
   for (i = 0; i < info->ent->ndepends; ++i)
@@ -164,6 +302,10 @@ remove_redundant_cxx_conflicts (struct prelink_info *info)
   state = 0;
   memset (&fcs1, 0, sizeof (fcs1));
   memset (&fcs2, 0, sizeof (fcs2));
+  cache = alloca (sizeof (struct find_cxx_sym_cache *)
+		  * (info->ent->ndepends + 1));
+  memset (cache, '\0', sizeof (struct find_cxx_sym_cache *)
+		       * (info->ent->ndepends + 1));
   for (i = 0; i < info->conflict_rela_size; ++i)
     {
       reloc_type = GELF_R_TYPE (info->conflict_rela[i].r_info);
@@ -185,11 +327,16 @@ remove_redundant_cxx_conflicts (struct prelink_info *info)
 	}
 
       n = find_cxx_sym (info, info->conflict_rela[i].r_offset,
-			&fcs1, reloc_size);
+			&fcs1, reloc_size, cache);
 
       state = 0;
       if (n == -1)
 	continue;
+      if (n == -2)
+	{
+	  ret = 1;
+	  goto out_free_cache;
+	}
       state = 1;
       sec = addr_to_sec (fcs1.dso, fcs1.sym.st_value);
       if (sec == -1)
@@ -204,28 +351,14 @@ remove_redundant_cxx_conflicts (struct prelink_info *info)
       for (k = 0; specials[k].prefix; ++k)
 	if (ELF32_ST_VISIBILITY (fcs1.sym.st_other) == STV_DEFAULT
 	    && fcs1.sym.st_info == specials[k].st_info
-	    && strncmp (name, specials[k].prefix, specials[k].prefix_len) == 0
-	    && strcmp (secname, specials[k].section) == 0)
+	    && strncmp (name, specials[k].prefix, specials[k].prefix_len) == 0)
 	  break;
 
       if (specials[k].prefix == NULL)
 	continue;
 
-      /* Now check there are no other symbols pointing to it.  */
-      maxndx = fcs1.symtab->d_size / fcs1.dso->shdr[fcs1.symsec].sh_entsize;
-      for (ndx = 0; ndx < maxndx; ++ndx)
-	if (ndx != n)
-	  {
-	    GElf_Sym sym;
-
-	    gelfx_getsym (fcs1.dso->elf, fcs1.symtab, ndx, &sym);
-	    if ((sym.st_value + sym.st_size > fcs1.sym.st_value
-		 && sym.st_value < fcs1.sym.st_value + fcs1.sym.st_size)
-		|| sym.st_value == fcs1.sym.st_value)
-	      break;
-	  }
-
-      if (ndx < maxndx)
+      if (strcmp (secname, ".data") != 0
+	  && strcmp (secname, ".data.rel.ro") != 0)
 	continue;
 
       if (specials[k].check_pltref)
@@ -257,7 +390,13 @@ remove_redundant_cxx_conflicts (struct prelink_info *info)
 	goto check_pltref;
 
       o = find_cxx_sym (info, conflict->lookup.ent->base + conflict->lookupval,
-			&fcs2, fcs1.sym.st_size);
+			&fcs2, fcs1.sym.st_size, cache);
+
+      if (o == -2)
+	{
+	  ret = 1;
+	  goto out_free_cache;
+	}
 
       if (o == -1
 	  || fcs1.sym.st_size != fcs2.sym.st_size
@@ -271,7 +410,8 @@ remove_redundant_cxx_conflicts (struct prelink_info *info)
 	{
 	  error (0, ENOMEM, "%s: Could not compare %s arrays",
 		 info->dso->filename, name);
-	  return 1;
+	  ret = 1;
+	  goto out_free_cache;
 	}
 
       mem2 = mem1 + fcs1.sym.st_size;
@@ -313,50 +453,85 @@ check_pltref:
 	  || binsymtab == NULL)
 	continue;
 
-      maxndx = binsymtab->d_size / info->dso->shdr[binsymtabsec].sh_entsize;
-      for (ndx = 0; ndx < maxndx; ++ndx)
+      if (binsymcache == NULL)
+	{
+	  binsymcache = create_cache (info->dso, 1);
+	  if (binsymcache == NULL)
+	    {
+	      ret = 1;
+	      goto out_free_cache;
+	    }
+	}
+      if (binsymcache == (struct find_cxx_sym_cache *) -1UL)
+	continue;
+
+      lo = 0;
+      mid = 0;
+      hi = binsymcache->count;
+      while (lo < hi)
+	{
+	  mid = (lo + hi) / 2;
+	  if (binsymcache->vals[mid].start < info->conflict_rela[i].r_addend)
+	    lo = mid + 1;
+	  else if (binsymcache->vals[mid].start
+		   > info->conflict_rela[i].r_addend)
+	    hi = mid;
+	  else
+	    break;
+	}
+      if (lo >= hi)
+	continue;
+
+      while (mid > 0 && binsymcache->vals[mid - 1].start
+			== info->conflict_rela[i].r_addend)
+	--mid;
+
+      while (mid < binsymcache->count
+	     && binsymcache->vals[mid].start
+		== info->conflict_rela[i].r_addend)
 	{
 	  GElf_Sym sym;
 
+	  ndx = binsymcache->vals[mid].idx;
+	  mid++;
 	  gelfx_getsym (info->dso->elf, binsymtab, ndx, &sym);
-	  if (sym.st_value == info->conflict_rela[i].r_addend)
+	  assert (sym.st_value == info->conflict_rela[i].r_addend);
+	  if (sym.st_shndx == SHN_UNDEF && sym.st_value)
 	    {
-	      if (sym.st_shndx == SHN_UNDEF && sym.st_value)
-		{
-		  struct prelink_symbol *s;
+	      struct prelink_symbol *s;
 
-		  if (verbose > 4)
-		    error (0, 0, "Possible C++ conflict removal due to reference to binary's .plt at %s:%s+%d",
-			   fcs1.dso->filename, name,
-			   (int) (info->conflict_rela[i].r_offset
-				  - fcs1.sym.st_value));
+	      if (verbose > 4)
+		error (0, 0, "Possible C++ conflict removal due to reference to binary's .plt at %s:%s+%d",
+		       fcs1.dso->filename, name,
+		       (int) (info->conflict_rela[i].r_offset
+			      - fcs1.sym.st_value));
 
-		  for (s = &info->symbols[ndx]; s; s = s->next)
-		    if (s->reloc_class == RTYPE_CLASS_PLT)
-		      {
-			for (conflict = info->conflicts[fcs1.n]; conflict;
-			     conflict = conflict->next)
-			  if (conflict->lookup.ent->base + conflict->lookupval
-			      == info->conflict_rela[i].r_addend
-			      && conflict->conflict.ent
-			      && (conflict->conflict.ent->base
-				  + conflict->conflictval
-				  == s->u.ent->base + s->value)
-			      && conflict->reloc_class == RTYPE_CLASS_VALID)
-			    {
-			      if (verbose > 3)
-				error (0, 0, "Removing C++ conflict due to reference to binary's .plt at %s:%s+%d",
-				       fcs1.dso->filename, name,
-				       (int) (info->conflict_rela[i].r_offset
-					      - fcs1.sym.st_value));
+	      for (s = &info->symbols[ndx]; s; s = s->next)
+		if (s->reloc_class == RTYPE_CLASS_PLT)
+		  {
+		    for (conflict = info->conflicts[fcs1.n]; conflict;
+			 conflict = conflict->next)
+		      if (conflict->lookup.ent->base + conflict->lookupval
+			  == info->conflict_rela[i].r_addend
+			  && conflict->conflict.ent
+			  && (conflict->conflict.ent->base
+			      + conflict->conflictval
+			      == s->u.ent->base + s->value)
+			  && conflict->reloc_class == RTYPE_CLASS_VALID)
+			{
+			  if (verbose > 3)
+			    error (0, 0, "Removing C++ conflict due to reference to binary's .plt at %s:%s+%d",
+				   fcs1.dso->filename, name,
+				   (int) (info->conflict_rela[i].r_offset
+					  - fcs1.sym.st_value));
 
-			      info->conflict_rela[i].r_info =
-				GELF_R_INFO (1, GELF_R_TYPE (info->conflict_rela[i].r_info));
-			      ++removed;
-			    }
-			break;
-		      }
-		}
+			  info->conflict_rela[i].r_info =
+			    GELF_R_INFO (1, GELF_R_TYPE (info->conflict_rela[i].r_info));
+			  ++removed;
+			  break;
+			}
+		    break;
+		  }
 	      break;
 	    }
 	}
@@ -374,5 +549,11 @@ check_pltref:
       info->conflict_rela_size = j;
     }
 
-  return 0;
+out_free_cache:
+  for (i = 0; i < info->ent->ndepends + 1; i++)
+    if (cache[i] && cache[i] != (struct find_cxx_sym_cache *) -1UL)
+      free (cache[i]);
+  if (binsymcache && binsymcache != (struct find_cxx_sym_cache *) -1UL)
+    free (binsymcache);
+  return ret;
 }

@@ -1,3 +1,25 @@
+2007-10-08  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/cxx.c: Include alloca.h.
+	(specials): Moved out of remove_redundant_cxx_conflicts to toplevel.
+	Remove section fields.
+	(find_cxx_sym_valsize, find_cxx_sym_cache): New structs.
+	(struct find_cxx_sym): Add cache and lastndx fields.
+	(cachecmp, create_cache): New functions.
+	(find_cxx_sym): Add cache argument.  If cache[n] is NULL, call
+	create_cache.  Do a binary search in cache[n]->vals array instead
+	of always reading the whole symbol table.
+	(remove_redundant_cxx_conflicts): Adjust find_cxx_sym caller.
+	Check if secname is ".data" or ".data.rel.ro" instead of comparing
+	it against specials[k].secname.  Use binary search in binsymcache
+	when doing check_pltref checks.
+	* testsuite/Makefile.am (TESTS): Add cxx2.sh.
+	* testsuite/Makefile.in: Regenerated.
+	* testsuite/cxx1.sh: Check that some conflicts are optimized out
+	by C++ optimizations.
+	* testsuite/cxx2.sh: New test.
+	* testsuite/cxx2.C: New.
+
 2007-10-04  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/prelink.h (read_config): New prototype.
