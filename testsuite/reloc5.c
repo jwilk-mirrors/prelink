@@ -16,5 +16,6 @@ int main (void)
   printf ("  exit (0);\n}\n\n");
   printf ("asm (\".section nonalloced,\\\"aw\\\",@nobits\\n\\t\"\n");
   printf ("     \".globl testzero\\n\\t\"\n");
-  printf ("     \"testzero: .skip 16384\");\n");
+  printf ("     \"testzero: .skip 16384\\n\\t\"\n");
+  printf ("     \".previous\");\n");
 }

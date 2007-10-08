@@ -1052,7 +1052,7 @@ read_config (const char *config)
 
       p = line + strspn (line, " \t");
       if (p[0] == '-' && p[1] == 'c' && (p[2] == ' ' || p[2] == '\t'))
-        {
+	{
 	  glob_t g;
 	  p += 2 + strspn (p + 2, " \t");
 
@@ -1072,7 +1072,7 @@ read_config (const char *config)
 		break;
 	    }
 	  continue;
-        }
+	}
 
       llen = strlen (p);
       c = malloc (sizeof (*c) + llen);

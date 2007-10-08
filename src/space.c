@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2006 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2006, 2007 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -412,14 +412,20 @@ find_readonly_space (DSO *dso, GElf_Shdr *add, GElf_Ehdr *ehdr,
 		  if (shdr[k].sh_addr > add->sh_addr)
 		    {
 		      /* Don't allow inserting in between reloc sections
-			 if they are adjacent.  */
-		      if (shdr[k].sh_type != SHT_REL
-			  && shdr[k].sh_type != SHT_RELA)
+			 if they are adjacent.  Similarly for adjacent
+			 note sections.  */
+		      int sh_type1 = (shdr[k - 1].sh_type == SHT_RELA)
+				     ? SHT_REL : shdr[k - 1].sh_type;
+		      int sh_type2 = (shdr[k].sh_type == SHT_RELA)
+				     ? SHT_REL : shdr[k].sh_type;
+
+		      if (sh_type1 != sh_type2)
 			break;
-		      if (shdr[k - 1].sh_type != SHT_REL
-			  && shdr[k - 1].sh_type != SHT_RELA)
+
+		      if (sh_type1 != SHT_REL && sh_type1 != SHT_NOTE)
 			break;
-		      if (shdr[k - 1].sh_addr + shdr[k - 1].sh_size
+		      if ((shdr[k - 1].sh_addr
+			   + ((shdr[k - 1].sh_size + 3) & -4))
 			  != shdr[k].sh_addr)
 			break;
 		    }
@@ -561,6 +567,34 @@ find_readonly_space (DSO *dso, GElf_Shdr *add, GElf_Ehdr *ehdr,
 		      movesec = j;
 		    }
 		  break;
+		case SHT_REL:
+		case SHT_RELA:
+		case SHT_NOTE:
+		    /* Don't allow inserting in between reloc sections
+		       if they are adjacent.  Similarly for adjacent
+		       note sections.  */
+		    if (j + 1 < ehdr->e_shnum)
+		      {
+			if (shdr[j].sh_type == SHT_NOTE)
+			  {
+			    if (shdr[j + 1].sh_type != SHT_NOTE)
+			      break;
+			  }
+			else if (shdr[j + 1].sh_type != SHT_REL
+				 && shdr[j + 1].sh_type != SHT_RELA)
+			  {
+			    break;
+			  }
+
+			if ((shdr[j].sh_addr
+			     + ((shdr[j].sh_size + 3) & -4))
+			    != shdr[j + 1].sh_addr)
+			  break;
+
+			start += shdr[j].sh_size;
+			continue;
+		      }
+		    break;
 		}
 
 	      if (start + shdr[j].sh_size <= endaddr)
@@ -601,9 +635,37 @@ find_readonly_space (DSO *dso, GElf_Shdr *add, GElf_Ehdr *ehdr,
 		    if (phdr[e].p_filesz != shdr[k].sh_size
 			|| phdr[e].p_memsz != shdr[k].sh_size)
 		      {
-			error (0, 0, "%s: Non-PT_LOAD segment spanning more than one section",
-			       dso->filename);
-			return 0;
+			int k1 = -1;
+			if (phdr[e].p_type == PT_NOTE
+			    && shdr[k].sh_type == SHT_NOTE
+			    && phdr[e].p_filesz == phdr[e].p_memsz)
+			  {
+			    k1 = k;
+			    while (k1 < movesec)
+			      {
+				if (shdr[k1].sh_type != SHT_NOTE
+				    || shdr[k1].sh_addr - old_addr[k1]
+				       != shdr[k].sh_addr - old_addr[k]
+				    || old_addr[k1] + shdr[k1].sh_size
+				       > phdr[e].p_vaddr + phdr[e].p_filesz)
+				  {
+				    k1 = -1;
+				    break;
+				  }
+				if (old_addr[k1] + shdr[k1].sh_size
+				    == phdr[e].p_vaddr + phdr[e].p_filesz)
+				  break;
+				++k1;
+			      }
+			    if (k1 == movesec)
+			      k1 = -1;
+			  }
+			if (k1 == -1)
+			  {
+			    error (0, 0, "%s: Non-PT_LOAD segment spanning more than one section",
+				   dso->filename);
+			    return 0;
+			  }
 		      }
 		    phdr[e].p_vaddr += shdr[k].sh_addr - old_addr[k];
 		    phdr[e].p_paddr += shdr[k].sh_addr - old_addr[k];

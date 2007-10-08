@@ -9,6 +9,8 @@ SHFLAGS=
 case "`uname -m`" in
   ia64|ppc*|x86_64|alpha*|s390*|mips*) SHFLAGS=-fpic;; # Does not support non-pic shared libs
 esac
+# Disable this test under SELinux if textrel
+test -z "$SHFLAGS" -a -x /usr/sbin/getenforce -a "`/usr/sbin/getenforce`" = Enforcing && exit 77
 rm -f tls3 tls3lib*.so tls3.log
 rm -f prelink.cache
 $CC -shared -O2 -fpic -o tls3lib1.so $srcdir/tls1lib1.c

@@ -1,5 +1,20 @@
 2007-10-08  Jakub Jelinek  <jakub@redhat.com>
 
+	* src/space.c (find_readonly_space): Disallow section insertion in
+	between adjacent SHT_NOTE sections.  When creating new PT_LOAD,
+	handle multiple consecutive SHT_NOTE sections with just one PT_NOTE
+	segment for them.
+	* testsuite/Makefile.am (TESTS): Add shuffle9.sh.
+	* testsuite/Makefile.in: Regenerated.
+	* testsuite/shuffle9.sh: New test.
+	* testsuite/shuffle9.c: New.
+
+	* testsuite/shuffle2.c: Add .previous at the end of __asm.
+	* testsuite/reloc5.c (main): Likewise.
+
+	* testsuite/tls3.sh: If libs aren't built with -fpic,
+	disable the test under SELinux in enforcing mode.
+
 	* src/cxx.c: Include alloca.h.
 	(specials): Moved out of remove_redundant_cxx_conflicts to toplevel.
 	Remove section fields.
