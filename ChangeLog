@@ -1,3 +1,8 @@
+2007-10-09  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/cxx.c (find_cxx_sym): If fcs->lastndx != -1, search first
+	among symbols around it.
+
 2007-10-08  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/space.c (find_readonly_space): Disallow section insertion in

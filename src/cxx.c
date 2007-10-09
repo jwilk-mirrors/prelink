@@ -237,6 +237,31 @@ find_cxx_sym (struct prelink_info *info, GElf_Addr addr,
   c = fcs->cache;
   lo = 0;
   hi = c->count;
+  if (fcs->lastndx != -1)
+    {
+      if (c->vals[fcs->lastndx].start <= addr)
+	{
+	  lo = fcs->lastndx;
+	  if (hi - lo >= 16)
+	    {
+	      if (c->vals[lo + 2].start > addr)
+		hi = lo + 2;
+	      else if (c->vals[lo + 15].start > addr)
+		hi = lo + 15;
+	    }
+	}
+      else
+	{
+	  hi = fcs->lastndx;
+	  if (hi >= 15)
+	    {
+	      if (c->vals[hi - 2].start <= addr)
+		lo = hi - 2;
+	      else if (c->vals[hi - 15].start <= addr)
+		lo = hi - 15;
+	    }
+	}
+    }
   while (lo < hi)
     {
       mid = (lo + hi) / 2;
