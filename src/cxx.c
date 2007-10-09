@@ -385,7 +385,8 @@ remove_redundant_cxx_conflicts (struct prelink_info *info)
 	continue;
 
       if (strcmp (secname, ".data") != 0
-	  && strcmp (secname, ".data.rel.ro") != 0)
+	  && strcmp (secname, ".data.rel.ro") != 0
+	  && strcmp (secname, ".sdata") != 0)
 	continue;
 
       if (specials[k].check_pltref)

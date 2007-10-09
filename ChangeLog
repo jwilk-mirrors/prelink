@@ -1,5 +1,8 @@
 2007-10-09  Jakub Jelinek  <jakub@redhat.com>
 
+	* src/cxx.c (remove_redundant_cxx_conflicts): Allow .sdata
+	section as well.
+
 	* src/prelink.h (struct prelink_conflict): Add next2 field.
 	(struct prelink_conflicts): Add hash2 field.
 	* src/get.c (prelink_record_relocations): Clear next2 fields.
