@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2003, 2004, 2005 Red Hat, Inc.
+/* Copyright (C) 2001, 2003, 2004, 2005, 2007 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -38,6 +38,7 @@ find_ents (void **p, void *info)
   struct collect_ents *l = (struct collect_ents *) info;
   struct prelink_entry *e = * (struct prelink_entry **) p;
 
+  e->u.tmp = 0;
   if ((e->type == ET_DYN && e->done == 1)
       || (e->type == ET_EXEC && e->done == 0 && ! libs_only))
     l->ents[l->nents++] = e;
@@ -46,39 +47,14 @@ find_ents (void **p, void *info)
 }
 
 static void
-clear_ent_marks (struct prelink_entry *ent)
-{
-  int i;
-
-  ent->u.tmp = 0;
-  for (i = 0; i < ent->ndepends; ++i)
-    clear_ent_marks (ent->depends[i]);
-}
-
-static struct prelink_entry *
-find_unlisted_dependency (struct prelink_entry *ent)
-{
-  int i;
-  struct prelink_entry *ret;
-
-  if (ent->u.tmp == 0)
-    return ent;
-  for (i = 0; i < ent->ndepends; ++i)
-    if ((ret = find_unlisted_dependency (ent->depends[i])) != NULL)
-      return ret;
-  return NULL;
-}
-
-static void
 prelink_ent (struct prelink_entry *ent)
 {
-  int i;
+  int i, j;
   DSO *dso;
   struct stat64 st;
   struct prelink_link *hardlink;
   char *move = NULL;
   size_t movelen = 0;
-  struct prelink_entry *dep;
 
   for (i = 0; i < ent->ndepends; ++i)
     if (ent->depends[i]->done == 1)
@@ -95,23 +71,31 @@ prelink_ent (struct prelink_entry *ent)
 		 ent->filename, ent->depends[i]->filename);
 	return;
       }
-    else
-      clear_ent_marks (ent->depends[i]);
 
   ent->u.tmp = 1;
   for (i = 0; i < ent->ndepends; ++i)
     ent->depends[i]->u.tmp = 1;
-
-  if ((dep = find_unlisted_dependency (ent)) != NULL)
+  for (i = 0; i < ent->ndepends; ++i)
     {
-      ent->done = 0;
-      if (! undo)
-	ent->type = ET_UNPRELINKABLE;
-      if (verbose)
-	error (0, 0, "Could not prelink %s because it doesn't use %s, but one of its dependencies has been prelinked against it",
-	       ent->filename, dep->filename);
-      return;
+      struct prelink_entry *dent = ent->depends[i];
+      for (j = 0; j < dent->ndepends; ++j)
+	if (dent->depends[j]->u.tmp == 0)
+	  {
+	    ent->done = 0;
+	    if (! undo)
+	      ent->type = ET_UNPRELINKABLE;
+	    if (verbose)
+	      error (0, 0, "Could not prelink %s because it doesn't use %s, but one of its dependencies has been prelinked against it",
+		     ent->filename, dent->depends[j]->filename);
+	    ent->u.tmp = 0;
+	    for (i = 0; i < ent->ndepends; ++i)
+	      ent->depends[i]->u.tmp = 0;
+	    return;
+	  }
     }
+  ent->u.tmp = 0;
+  for (i = 0; i < ent->ndepends; ++i)
+    ent->depends[i]->u.tmp = 0;
 
   if (verbose)
     {
