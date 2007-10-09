@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2005 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2007 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -36,6 +36,27 @@ is_ldso_soname (const char *soname)
       || ! strcmp (soname, "ld64.so.1"))
     return 1;
   return 0;
+}
+
+static void
+conflict_hash_init (struct prelink_conflicts *conflicts)
+{
+  struct prelink_conflict **hash
+    = calloc (sizeof (struct prelink_conflict *), 251);
+  struct prelink_conflict *conflict, *next;
+  size_t idx;
+
+  if (hash == NULL)
+    return;
+
+  for (conflict = conflicts->first; conflict; conflict = next)
+    {
+      next = conflict->next;
+      idx = conflict->symoff % 251;
+      conflict->next = hash[idx];
+      hash[idx] = conflict;
+    }
+  conflicts->hash = hash;
 }
 
 static int
@@ -207,13 +228,15 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 
   if (dso->ehdr.e_type == ET_EXEC || dso->arch->create_opd)
     {
-      info->conflicts = (struct prelink_conflict **)
-			calloc (sizeof (struct prelink_conflict *), ndeps);
+      info->conflicts = (struct prelink_conflicts *)
+			calloc (sizeof (struct prelink_conflicts), ndeps);
       if (info->conflicts == NULL)
 	{
 	  error (0, ENOMEM, "%s: Can't build list of conflicts", info->ent->filename);
 	  goto error_out;
 	}
+      for (i = 0; i < ndeps; i++)
+	info->conflicts[i].hash = &info->conflicts[i].first;
     }
   do
     {
@@ -347,6 +370,7 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 	    {
 	      struct prelink_conflict *conflict;
 	      int symowner;
+	      size_t idx;
 
 	      for (symowner = 1; symowner < ndeps; symowner++)
 		if (deps[symowner].start == symstart)
@@ -358,7 +382,10 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 		  goto error_out;
 		}
 
-	      for (conflict = info->conflicts[symowner]; conflict;
+              idx = 0;
+	      if (info->conflicts[symowner].hash != &info->conflicts[symowner].first)
+		idx = symoff % 251;
+	      for (conflict = info->conflicts[symowner].hash[idx]; conflict;
 		   conflict = conflict->next)
 		if (conflict->symoff == symoff
 		    && conflict->reloc_class == reloc_class)
@@ -383,8 +410,8 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 		      goto error_out;
 		    }
 
-		  conflict->next = info->conflicts[symowner];
-		  info->conflicts[symowner] = conflict;
+		  conflict->next = info->conflicts[symowner].hash[idx];
+		  info->conflicts[symowner].hash[idx] = conflict;
 		  conflict->lookup.tls = tls;
 		  conflict->conflict.tls = tls;
 		  conflict->lookupval = value[0];
@@ -392,6 +419,8 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 		  conflict->symoff = symoff;
 		  conflict->reloc_class = reloc_class;
 		  conflict->used = 0;
+		  if (++info->conflicts[symowner].count == 16)
+		    conflict_hash_init (&info->conflicts[symowner]);
 		}
 	    }
 	}
@@ -438,6 +467,7 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 	      struct prelink_tls *tlss[2];
 	      struct prelink_conflict *conflict;
 	      int symowner, j;
+	      size_t idx;
 
 	      for (symowner = 1; symowner < ndeps; symowner++)
 		if (deps[symowner].start == symstart)
@@ -479,7 +509,11 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 		    }
 		}
 
-	      for (conflict = info->conflicts[symowner]; conflict;
+	      idx = 0;
+	      if (info->conflicts[symowner].hash
+		  != &info->conflicts[symowner].first)
+		idx = symoff % 251;
+	      for (conflict = info->conflicts[symowner].hash[idx]; conflict;
 		   conflict = conflict->next)
 		if (conflict->symoff == symoff
 		    && conflict->reloc_class == reloc_class)
@@ -508,8 +542,8 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 		      goto error_out;
 		    }
 
-		  conflict->next = info->conflicts[symowner];
-		  info->conflicts[symowner] = conflict;
+		  conflict->next = info->conflicts[symowner].hash[idx];
+		  info->conflicts[symowner].hash[idx] = conflict;
 		  if (reloc_class != RTYPE_CLASS_TLS)
 		    {
 		      conflict->lookup.ent = ents[0];
@@ -525,6 +559,8 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 		  conflict->symoff = symoff;
 		  conflict->reloc_class = reloc_class;
 		  conflict->used = 0;
+		  if (++info->conflicts[symowner].count == 16)
+		    conflict_hash_init (&info->conflicts[symowner]);
 		}
 	    }
 	}

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2007 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -147,17 +147,21 @@ opd_init (struct prelink_info *info)
       struct prelink_entry *ent;
       struct prelink_conflict *conflict;
       struct opd_lib *ol;
+      size_t maxidx = 1;
 
       ent = info->ent->depends[i];
       ol = ent->opd;
+      if (info->conflicts[i + 1].hash != &info->conflicts[i + 1].first)
+	maxidx = 251;
       for (j = 0; j < ol->nrefs; ++j)
 	{
+	  GElf_Addr symoff = ol->u.refs[j].symoff;
 	  refent.val = ol->u.refs[j].ent->val;
 	  refent.gp = ol->u.refs[j].ent->gp;
-	  for (conflict = info->conflicts[i + 1]; conflict;
+	  for (conflict = info->conflicts[i + 1].hash[symoff % maxidx]; conflict;
 	       conflict = conflict->next)
 	    {
-	      if (conflict->symoff == ol->u.refs[j].symoff
+	      if (conflict->symoff == symoff
 		  && conflict->reloc_class != RTYPE_CLASS_COPY
 		  && conflict->reloc_class != RTYPE_CLASS_TLS)
 		break;
@@ -183,6 +187,7 @@ opd_init (struct prelink_info *info)
 	      struct opd_ent_plt *entp
 		= (struct opd_ent_plt *) ol->u.refs[j].ent;
 	      int k;
+	      size_t idx = 0;
 
 	      for (k = 0; k < info->ent->ndepends; ++k)
 		if (info->ent->depends[k] == entp->lib)
@@ -190,7 +195,9 @@ opd_init (struct prelink_info *info)
 
 	      assert (k < info->ent->ndepends);
 
-	      for (conflict = info->conflicts[k + 1]; conflict;
+	      if (info->conflicts[k + 1].hash != &info->conflicts[k + 1].first)
+		idx = entp->symoff % 251;
+	      for (conflict = info->conflicts[k + 1].hash[idx]; conflict;
 		   conflict = conflict->next)
 		{
 		  if (conflict->symoff == entp->symoff

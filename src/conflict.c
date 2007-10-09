@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2007 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -33,8 +33,12 @@ prelink_conflict (struct prelink_info *info, GElf_Word r_sym,
   GElf_Word symoff = info->symtab_start + r_sym * info->symtab_entsize;
   struct prelink_conflict *conflict;
   int reloc_class = info->dso->arch->reloc_class (reloc_type);
+  size_t idx = 0;
 
-  for (conflict = info->curconflicts; conflict; conflict = conflict->next)
+  if (info->curconflicts->hash != &info->curconflicts->first)
+    idx = symoff % 251;
+  for (conflict = info->curconflicts->hash[idx]; conflict;
+       conflict = conflict->next)
     if (conflict->symoff == symoff && conflict->reloc_class == reloc_class)
       {
 	conflict->used = 1;
@@ -535,12 +539,12 @@ prelink_build_conflicts (struct prelink_info *info)
 	    }
 	}
 
-      if (info->conflicts[i] || info->tls[i].modid)
+      if (info->conflicts[i].count || info->tls[i].modid)
 	{
-	  int j, sec, first_conflict;
+	  int j, sec, first_conflict, maxidx;
 	  struct prelink_conflict *conflict;
 
-	  info->curconflicts = info->conflicts[i];
+	  info->curconflicts = &info->conflicts[i];
 	  info->curtls = info->tls[i].modid ? info->tls + i : NULL;
 	  first_conflict = info->conflict_rela_size;
 	  sec = addr_to_sec (dso, dso->info[DT_SYMTAB]);
@@ -575,14 +579,18 @@ prelink_build_conflicts (struct prelink_info *info)
 	      && dso->arch->arch_prelink_conflict (dso, info))
 	    goto error_out;
 
-	  for (conflict = info->curconflicts; conflict;
-	       conflict = conflict->next)
-	    if (! conflict->used)
-	      {
-		error (0, 0, "%s: Conflict %08llx not found in any relocation",
-		       dso->filename, (unsigned long long) conflict->symoff);
-		ret = 1;
-	      }
+	  maxidx = 1;
+	  if (info->curconflicts->hash != &info->curconflicts->first)
+	    maxidx = 251;
+	  for (j = 0; j < maxidx; j++)
+	    for (conflict = info->curconflicts->hash[j]; conflict;
+		 conflict = conflict->next)
+	      if (! conflict->used)
+		{
+		  error (0, 0, "%s: Conflict %08llx not found in any relocation",
+			 dso->filename, (unsigned long long) conflict->symoff);
+		  ret = 1;
+		}
 
 	  /* Record library's position in search scope into R_SYM field.  */
 	  for (j = first_conflict; j < info->conflict_rela_size; ++j)

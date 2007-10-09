@@ -407,6 +407,13 @@ struct prelink_conflict
   int used;
 };
 
+struct prelink_conflicts
+{
+  struct prelink_conflict *first;
+  struct prelink_conflict **hash;
+  size_t count;
+};
+
 #define conflict_lookup_value(cfl)					  \
   (((cfl)->reloc_class != RTYPE_CLASS_TLS ? (cfl)->lookup.ent->base : 0)  \
    + (cfl)->lookupval)
@@ -417,8 +424,8 @@ struct prelink_info
   DSO **dsos;
   struct prelink_entry *ent;
   struct prelink_symbol *symbols;
-  struct prelink_conflict **conflicts;
-  struct prelink_conflict *curconflicts;
+  struct prelink_conflicts *conflicts;
+  struct prelink_conflicts *curconflicts;
   struct prelink_tls *tls, *curtls;
   const char **sonames;
   char *dynbss, *sdynbss;

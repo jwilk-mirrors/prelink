@@ -1,5 +1,21 @@
 2007-10-09  Jakub Jelinek  <jakub@redhat.com>
 
+	* src/prelink.h (struct prelink_conflicts): New type.
+	(struct prelink_info): Change type of conflicts and curconflicts
+	fields to struct prelink_conflicts *.
+	* src/get.c (conflict_hash_init): New function.
+	(prelink_record_relocations): Adjust initialization of conflicts
+	array.  If conflict linked lists has more than 15 entries, use
+	hash table with chains.
+	* src/prelink.c (free_info): Handle freeing conflict list using a hash
+	table.
+	* src/fptr.c (opd_init): Only walk corresponding hash chain if
+	conflict list is using a hash table.
+	* src/conflict.c (prelink_conflict): Likewise.
+	(prelink_build_conflicts): Handle conflict list using a hash table.
+	* src/cxx.c (remove_redundant_cxx_conflicts): Likewise.  Only walk
+	corresponding hash chain if conflict list is using a hash table.
+
 	* src/doit.c (find_ents): Clear e->u.tmp.
 	(clear_ent_marks, find_unlisted_dependency): Remove.
 	(prelink_ent): More efficient non-recursive check for
