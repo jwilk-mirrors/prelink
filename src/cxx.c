@@ -529,7 +529,7 @@ check_pltref:
 	  if (sym.st_shndx == SHN_UNDEF && sym.st_value)
 	    {
 	      struct prelink_symbol *s;
-	      size_t maxidx = 1, l;
+	      size_t maxidx, l;
 
 	      if (verbose > 4)
 		error (0, 0, "Possible C++ conflict removal due to reference to binary's .plt at %s:%s+%d",
@@ -537,36 +537,78 @@ check_pltref:
 		       (int) (info->conflict_rela[i].r_offset
 			      - fcs1.sym.st_value));
 
-	      if (info->conflicts[fcs1.n].hash
-		  != &info->conflicts[fcs1.n].first)
-		maxidx = 251;
 	      for (s = &info->symbols[ndx]; s; s = s->next)
 		if (s->reloc_class == RTYPE_CLASS_PLT)
-		  {
-		    for (l = 0; l < maxidx; l++)
-		      for (conflict = info->conflicts[fcs1.n].hash[l];
-			   conflict; conflict = conflict->next)
+		  break;
+
+	      if (s == NULL)
+		break;
+
+	      maxidx = 1;
+	      if (info->conflicts[fcs1.n].hash
+		  != &info->conflicts[fcs1.n].first)
+		{
+		  if (info->conflicts[fcs1.n].hash2 == NULL)
+		    {
+		      info->conflicts[fcs1.n].hash2
+			= calloc (sizeof (struct prelink_conflict *), 251);
+		      if (info->conflicts[fcs1.n].hash2 != NULL)
+			{
+			  for (l = 0; l < 251; l++)
+			    for (conflict = info->conflicts[fcs1.n].hash[l];
+				 conflict; conflict = conflict->next)
+			      if (conflict->reloc_class == RTYPE_CLASS_VALID
+				  && conflict->conflict.ent)
+				{
+				  size_t ccidx
+				    = (conflict->lookup.ent->base
+				       + conflict->lookupval) % 251;
+				  conflict->next2
+				    = info->conflicts[fcs1.n].hash2[ccidx];
+				  info->conflicts[fcs1.n].hash2[ccidx]
+				    = conflict;
+				}
+			}
+		    }
+		  if (info->conflicts[fcs1.n].hash2 != NULL)
+		    {
+		      size_t ccidx = info->conflict_rela[i].r_addend % 251;
+		      for (conflict = info->conflicts[fcs1.n].hash2[ccidx];
+			   conflict; conflict = conflict->next2)
 			if (conflict->lookup.ent->base + conflict->lookupval
 			    == info->conflict_rela[i].r_addend
-			    && conflict->conflict.ent
 			    && (conflict->conflict.ent->base
 				+ conflict->conflictval
-				== s->u.ent->base + s->value)
-			    && conflict->reloc_class == RTYPE_CLASS_VALID)
-			  {
-			    if (verbose > 3)
-			      error (0, 0, "Removing C++ conflict due to reference to binary's .plt at %s:%s+%d",
-				     fcs1.dso->filename, name,
-				     (int) (info->conflict_rela[i].r_offset
-					    - fcs1.sym.st_value));
+				== s->u.ent->base + s->value))
+			  goto pltref_remove;
+		      break;
+		    }
+		  maxidx = 251;
+		}
 
-			    info->conflict_rela[i].r_info =
-			      GELF_R_INFO (1, GELF_R_TYPE (info->conflict_rela[i].r_info));
-			    ++removed;
-			    goto pltref_check_done;
-			  }
-		    break;
-		  }
+	      for (l = 0; l < maxidx; l++)
+		for (conflict = info->conflicts[fcs1.n].hash[l];
+		     conflict; conflict = conflict->next)
+		  if (conflict->lookup.ent->base + conflict->lookupval
+		      == info->conflict_rela[i].r_addend
+		      && conflict->conflict.ent
+		      && (conflict->conflict.ent->base
+			  + conflict->conflictval == s->u.ent->base + s->value)
+		      && conflict->reloc_class == RTYPE_CLASS_VALID)
+		    {
+pltref_remove:
+		      if (verbose > 3)
+			error (0, 0, "Removing C++ conflict due to reference to binary's .plt at %s:%s+%d",
+			       fcs1.dso->filename, name,
+			       (int) (info->conflict_rela[i].r_offset
+				      - fcs1.sym.st_value));
+
+		      info->conflict_rela[i].r_info =
+			GELF_R_INFO (1, GELF_R_TYPE (info->conflict_rela[i].r_info));
+		      ++removed;
+		      goto pltref_check_done;
+		    }
+
 pltref_check_done:
 	      break;
 	    }

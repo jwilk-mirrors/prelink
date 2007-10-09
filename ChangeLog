@@ -1,5 +1,12 @@
 2007-10-09  Jakub Jelinek  <jakub@redhat.com>
 
+	* src/prelink.h (struct prelink_conflict): Add next2 field.
+	(struct prelink_conflicts): Add hash2 field.
+	* src/get.c (prelink_record_relocations): Clear next2 fields.
+	* src/prelink.c (free_info): Also free hash2 table.
+	* src/cxx.c (remove_redundant_cxx_conflicts): Populate hash2
+	if not populated yet, use it to speed up pltref checking.
+
 	* src/prelink.h (struct prelink_conflicts): New type.
 	(struct prelink_info): Change type of conflicts and curconflicts
 	fields to struct prelink_conflicts *.

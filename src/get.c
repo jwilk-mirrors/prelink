@@ -411,6 +411,7 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 		    }
 
 		  conflict->next = info->conflicts[symowner].hash[idx];
+		  conflict->next2 = NULL;
 		  info->conflicts[symowner].hash[idx] = conflict;
 		  conflict->lookup.tls = tls;
 		  conflict->conflict.tls = tls;
@@ -543,6 +544,7 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 		    }
 
 		  conflict->next = info->conflicts[symowner].hash[idx];
+		  conflict->next2 = NULL;
 		  info->conflicts[symowner].hash[idx] = conflict;
 		  if (reloc_class != RTYPE_CLASS_TLS)
 		    {

@@ -389,6 +389,7 @@ struct prelink_symbol
 struct prelink_conflict
 {
   struct prelink_conflict *next;
+  struct prelink_conflict *next2;
   /* Object which it was relocated to.  */
   union
     {
@@ -411,6 +412,7 @@ struct prelink_conflicts
 {
   struct prelink_conflict *first;
   struct prelink_conflict **hash;
+  struct prelink_conflict **hash2;
   size_t count;
 };
 
