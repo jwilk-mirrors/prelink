@@ -1,3 +1,7 @@
+2007-12-04  Daniel Jacobowitz  <dan@codesourcery.com>
+
+	* gather.c (gather_object): Print an error if nftw64 fails.
+
 2007-10-09  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/cxx.c (remove_redundant_cxx_conflicts): Allow .sdata

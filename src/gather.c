@@ -1004,6 +1004,8 @@ gather_object (const char *name, int deref, int onefs)
       ++implicit;
       ret = nftw64 (name, gather_func, 20, flags | FTW_ACTIONRETVAL);
       --implicit;
+      if (ret < 0)
+	error (0, errno, "Failed searching %s", name);
 #ifndef HAVE_FTW_ACTIONRETVAL
       free (blacklist_dir);
       blacklist_dir = NULL;
