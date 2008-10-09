@@ -1,3 +1,11 @@
+2008-09-29 Joseph Myers  <joseph@codesourcery.com>
+
+	* src/arch-sparc64.c (sparc64_prelink_rela,
+	sparc64_prelink_conflict_rela, sparc64_undo_prelink_rela,
+	sparc64_reloc_class): Handle TLS relocations.
+	(PL_ARCH): Update mmap_base and mmap_end for TASK_UNMAPPED_BASE
+	change to 0xfffff80100000000.
+
 2007-12-04  Daniel Jacobowitz  <dan@codesourcery.com>
 
 	* src/gather.c (gather_object): Print an error if nftw64 fails.

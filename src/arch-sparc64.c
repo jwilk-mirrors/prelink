@@ -232,6 +232,38 @@ sparc64_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
 		  (((value - rela->r_offset) >> 2) & 0x3fffffff)
 		  | (read_ube32 (dso, rela->r_offset) & 0xc0000000));
       break;
+    case R_SPARC_TLS_DTPOFF64:
+      write_be64 (dso, rela->r_offset, value + rela->r_addend);
+      break;
+    /* DTPMOD64 and TPOFF64 is impossible to predict in shared libraries
+       unless prelink sets the rules.  */
+    case R_SPARC_TLS_DTPMOD64:
+      if (dso->ehdr.e_type == ET_EXEC)
+	{
+	  error (0, 0, "%s: R_SPARC_TLS_DTPMOD64 reloc in executable?",
+		 dso->filename);
+	  return 1;
+	}
+      break;
+    case R_SPARC_TLS_TPOFF64:
+      if (dso->ehdr.e_type == ET_EXEC && info->resolvetls)
+	write_be64 (dso, rela->r_offset,
+		    value + rela->r_addend - info->resolvetls->offset);
+      break;
+    case R_SPARC_TLS_LE_HIX22:
+      if (dso->ehdr.e_type == ET_EXEC && info->resolvetls)
+	write_be32 (dso, rela->r_offset,
+		    (read_ube32 (dso, rela->r_offset) & 0xffc00000)
+		    | (((~(value + rela->r_addend - info->resolvetls->offset))
+			>> 10) & 0x3fffff));
+      break;
+    case R_SPARC_TLS_LE_LOX10:
+      if (dso->ehdr.e_type == ET_EXEC && info->resolvetls)
+	write_be32 (dso, rela->r_offset,
+		    (read_ube32 (dso, rela->r_offset) & 0xffffe000) | 0x1c00
+		    | ((value + rela->r_addend - info->resolvetls->offset)
+		       & 0x3ff));
+      break;
     case R_SPARC_H44:
       write_be32 (dso, rela->r_offset,
 		  ((value >> 22) & 0x3fffff)
@@ -405,6 +437,7 @@ sparc64_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
 {
   GElf_Addr value;
   struct prelink_conflict *conflict;
+  struct prelink_tls *tls;
   GElf_Rela *ret;
   int r_type;
 
@@ -415,8 +448,33 @@ sparc64_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
   conflict = prelink_conflict (info, GELF_R_SYM (rela->r_info),
 			       SPARC64_R_TYPE (rela->r_info));
   if (conflict == NULL)
-    return 0;
-  value = conflict_lookup_value (conflict);
+    {
+      if (info->curtls == NULL)
+	return 0;
+      switch (SPARC64_R_TYPE (rela->r_info))
+	{
+	/* Even local DTPMOD64 and TPOFF64 relocs need conflicts.  */
+	case R_SPARC_TLS_DTPMOD64:
+	case R_SPARC_TLS_TPOFF64:
+	case R_SPARC_TLS_LE_HIX22:
+	case R_SPARC_TLS_LE_LOX10:
+	  break;
+	default:
+	  return 0;
+	}
+      value = 0;
+    }
+  else
+    {
+      /* DTPOFF64 wants to see only real conflicts, not lookups
+	 with reloc_class RTYPE_CLASS_TLS.  */
+      if (SPARC64_R_TYPE (rela->r_info) == R_SPARC_TLS_DTPOFF64
+	  && conflict->lookup.tls == conflict->conflict.tls
+	  && conflict->lookupval == conflict->conflictval)
+	return 0;
+
+      value = conflict_lookup_value (conflict);
+    }
   ret = prelink_conflict_add_rela (info);
   if (ret == NULL)
     return 1;
@@ -500,6 +558,47 @@ sparc64_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
     case R_SPARC_UA32:
     case R_SPARC_UA64:
       break;
+    case R_SPARC_TLS_DTPMOD64:
+    case R_SPARC_TLS_DTPOFF64:
+    case R_SPARC_TLS_TPOFF64:
+    case R_SPARC_TLS_LE_HIX22:
+    case R_SPARC_TLS_LE_LOX10:
+      if (conflict != NULL
+	  && (conflict->reloc_class != RTYPE_CLASS_TLS
+	      || conflict->lookup.tls == NULL))
+	{
+	  error (0, 0, "%s: TLS reloc not resolving to STT_TLS symbol",
+		 dso->filename);
+	  return 1;
+	}
+      tls = conflict ? conflict->lookup.tls : info->curtls;
+      switch (r_type)
+	{
+	case R_SPARC_TLS_DTPMOD64:
+	  r_type = R_SPARC_64;
+	  value = tls->modid;
+	  break;
+	case R_SPARC_TLS_DTPOFF64:
+	  r_type = R_SPARC_64;
+	  break;
+	case R_SPARC_TLS_TPOFF64:
+	  r_type = R_SPARC_64;
+	  value -= tls->offset;
+	  break;
+	case R_SPARC_TLS_LE_HIX22:
+	  r_type = R_SPARC_32;
+	  value -= tls->offset;
+	  value = (read_ube32 (dso, rela->r_offset) & 0xffc00000)
+		  | (((~value) >> 10) & 0x3fffff);
+	  break;
+	case R_SPARC_TLS_LE_LOX10:
+	  r_type = R_SPARC_32;
+	  value -= tls->offset;
+	  value = (read_ube32 (dso, rela->r_offset) & 0xffffe000) | 0x1c00
+		  | (value & 0x3ff);
+	  break;
+	}
+      break;
     default:
       error (0, 0, "%s: Unknown Sparc relocation type %d", dso->filename,
 	     r_type);
@@ -582,6 +681,9 @@ sparc64_undo_prelink_rela (DSO *dso, GElf_Rela *rela, GElf_Addr relaaddr)
     case R_SPARC_64:
     case R_SPARC_UA64:
     case R_SPARC_DISP64:
+    case R_SPARC_TLS_DTPMOD64:
+    case R_SPARC_TLS_DTPOFF64:
+    case R_SPARC_TLS_TPOFF64:
       write_be64 (dso, rela->r_offset, 0);
       break;
     case R_SPARC_32:
@@ -635,6 +737,14 @@ sparc64_undo_prelink_rela (DSO *dso, GElf_Rela *rela, GElf_Addr relaaddr)
       write_be32 (dso, rela->r_offset,
 		  read_ube32 (dso, rela->r_offset) & ~0x1fff);
       break;
+    case R_SPARC_TLS_LE_LOX10:
+      write_be32 (dso, rela->r_offset,
+		  read_ube32 (dso, rela->r_offset) & 0xffffe000);
+      break;
+    case R_SPARC_TLS_LE_HIX22:
+      write_be32 (dso, rela->r_offset,
+		  read_ube32 (dso, rela->r_offset) & 0xffc00000);
+      break;
     case R_SPARC_COPY:
       if (dso->ehdr.e_type == ET_EXEC)
 	/* COPY relocs are handled specially in generic code.  */
@@ -679,6 +789,12 @@ sparc64_reloc_class (int reloc_type)
     {
     case R_SPARC_COPY: return RTYPE_CLASS_COPY;
     case R_SPARC_JMP_SLOT: return RTYPE_CLASS_PLT;
+    case R_SPARC_TLS_DTPMOD64:
+    case R_SPARC_TLS_DTPOFF64:
+    case R_SPARC_TLS_TPOFF64:
+    case R_SPARC_TLS_LE_HIX22:
+    case R_SPARC_TLS_LE_LOX10:
+      return RTYPE_CLASS_TLS;
     default: return RTYPE_CLASS_VALID;
     }
 }
@@ -709,17 +825,17 @@ PL_ARCH = {
   .max_reloc_size = 8,
   .arch_prelink = sparc64_arch_prelink,
   .undo_prelink_rela = sparc64_undo_prelink_rela,
-  /* Although TASK_UNMAPPED_BASE is 0xfffff80000000000, we leave some
+  /* Although TASK_UNMAPPED_BASE is 0xfffff80100000000, we leave some
      area so that mmap of /etc/ld.so.cache and ld.so's malloc
      does not take some library's VA slot.
      Also, if this guard area isn't too small, typically
      even dlopened libraries will get the slots they desire.  */
-  .mmap_base = 0xfffff80001000000LL,
+  .mmap_base = 0xfffff80101000000LL,
   /* If we need yet more space for shared libraries, we can of course
      expand, but limiting all DSOs into 4 GB means stack overflows
      jumping to shared library functions is much harder (there is
      '\0' byte in the address before the bytes that matter).  */
-  .mmap_end =  0xfffff80100000000LL,
+  .mmap_end =  0xfffff80200000000LL,
   .max_page_size = 0x100000,
   .page_size = 0x2000
 };
