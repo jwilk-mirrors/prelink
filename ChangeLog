@@ -1,3 +1,8 @@
+2009-03-04  Joseph Myers  <joseph@codesourcery.com>
+
+	* testsuite/reloc2.sh, testsuite/tls3.sh: Add ARM to architectures
+	requiring PIC shared libraries.
+
 2009-03-04  Daniel Jacobowitz  <dan@codesourcery.com>
             Joseph Myers  <joseph@codesourcery.com>
 

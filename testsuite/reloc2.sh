@@ -2,7 +2,7 @@
 . `dirname $0`/functions.sh
 SHFLAGS=
 case "`uname -m`" in
-  ia64|ppc*|x86_64|mips*) SHFLAGS=-fpic;; # Does not support non-pic shared libs
+  ia64|ppc*|x86_64|mips*|arm*) SHFLAGS=-fpic;; # Does not support non-pic shared libs
   s390*) if file reloc1lib1.so | grep -q 64-bit; then SHFLAGS=-fpic; fi;;
 esac
 # Disable this test under SELinux if textrel
