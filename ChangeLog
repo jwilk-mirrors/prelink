@@ -1,3 +1,12 @@
+2009-03-04  Daniel Jacobowitz  <dan@codesourcery.com>
+
+	* src/arch-arm.c (arm_adjust_dyn, arm_adjust_rel, arm_adjust_rela,
+	arm_prelink_rel, arm_prelink_rela, arm_apply_conflict_rela,
+	arm_apply_rel, arm_apply_rela, arm_prelink_conflict_rela,
+	arm_rel_to_rela, arm_rela_to_rel, arm_need_rel_to_rela,
+	arm_arch_prelink, arm_arch_undo_prelink, arm_undo_prelink_rel):
+	Use endian-neutral functions.
+
 2008-09-29 Joseph Myers  <joseph@codesourcery.com>
 
 	* src/arch-sparc64.c (sparc64_prelink_rela,

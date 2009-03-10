@@ -40,12 +40,12 @@ arm_adjust_dyn (DSO *dso, int n, GElf_Dyn *dyn, GElf_Addr start,
       if (sec == -1)
 	return 0;
 
-      data = read_ule32 (dso, dyn->d_un.d_ptr);
+      data = read_une32 (dso, dyn->d_un.d_ptr);
       /* If .got.plt[0] points to _DYNAMIC, it needs to be adjusted.  */
       if (data == dso->shdr[n].sh_addr && data >= start)
-	write_le32 (dso, dyn->d_un.d_ptr, data + adjust);
+	write_ne32 (dso, dyn->d_un.d_ptr, data + adjust);
 
-      data = read_ule32 (dso, dyn->d_un.d_ptr + 4);
+      data = read_une32 (dso, dyn->d_un.d_ptr + 4);
       /* If .got.plt[1] points to .plt, it needs to be adjusted.  */
       if (data && data >= start)
 	{
@@ -57,7 +57,7 @@ arm_adjust_dyn (DSO *dso, int n, GElf_Dyn *dyn, GElf_Addr start,
 		&& strcmp (strptr (dso, dso->ehdr.e_shstrndx,
 				   dso->shdr[i].sh_name), ".plt") == 0)
 	      {
-		write_le32 (dso, dyn->d_un.d_ptr + 4, data + adjust);
+		write_ne32 (dso, dyn->d_un.d_ptr + 4, data + adjust);
 		break;
 	      }
 	}
@@ -74,9 +74,9 @@ arm_adjust_rel (DSO *dso, GElf_Rel *rel, GElf_Addr start,
     {
     case R_ARM_RELATIVE:
     case R_ARM_JUMP_SLOT:
-      data = read_ule32 (dso, rel->r_offset);
+      data = read_une32 (dso, rel->r_offset);
       if (data >= start)
-	write_le32 (dso, rel->r_offset, data + adjust);
+	write_ne32 (dso, rel->r_offset, data + adjust);
       break;
     }
   return 0;
@@ -96,13 +96,13 @@ arm_adjust_rela (DSO *dso, GElf_Rela *rela, GElf_Addr start,
 	  rela->r_addend += (Elf32_Sword) adjust;
 	  /* Write it to the memory location as well.
 	     Not necessary, but we can do it.  */
-	  write_le32 (dso, rela->r_offset, rela->r_addend);
+	  write_ne32 (dso, rela->r_offset, rela->r_addend);
 	}
       break;
     case R_ARM_JUMP_SLOT:
-      data = read_ule32 (dso, rela->r_offset);
+      data = read_une32 (dso, rela->r_offset);
       if (data >= start)
-	write_le32 (dso, rela->r_offset, data + adjust);
+	write_ne32 (dso, rela->r_offset, data + adjust);
       break;
       break;
     }
@@ -126,18 +126,18 @@ arm_prelink_rel (struct prelink_info *info, GElf_Rel *rel, GElf_Addr reladdr)
     {
     case R_ARM_GLOB_DAT:
     case R_ARM_JUMP_SLOT:
-      write_le32 (dso, rel->r_offset, value);
+      write_ne32 (dso, rel->r_offset, value);
       break;
     case R_ARM_ABS32:
       {
-	if (read_ule32 (dso, rel->r_offset))
+	if (read_une32 (dso, rel->r_offset))
 	  {
 	    error (0, 0, "%s: R_ARM_ABS32 relocs with non-zero addend should not be present in prelinked REL sections",
 		   dso->filename);
 	    return 1;
 	  }
 	rel->r_info = GELF_R_INFO (GELF_R_SYM (rel->r_info), R_ARM_GLOB_DAT);
-	write_le32 (dso, rel->r_offset, value);
+	write_ne32 (dso, rel->r_offset, value);
 	/* Tell prelink_rel routine *rel has changed.  */
 	return 2;
       }
@@ -178,10 +178,10 @@ arm_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
     {
     case R_ARM_GLOB_DAT:
     case R_ARM_JUMP_SLOT:
-      write_le32 (dso, rela->r_offset, value + rela->r_addend);
+      write_ne32 (dso, rela->r_offset, value + rela->r_addend);
       break;
     case R_ARM_ABS32:
-      write_le32 (dso, rela->r_offset, value + rela->r_addend);
+      write_ne32 (dso, rela->r_offset, value + rela->r_addend);
       break;
     case R_ARM_PC24:
       val = value + rela->r_addend - rela->r_offset;
@@ -192,8 +192,8 @@ arm_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
 	  return 1;
 	}
       val &= 0xffffff;
-      write_le32 (dso, rela->r_offset,
-		  (read_ule32 (dso, rela->r_offset) & 0xff000000) | val);
+      write_ne32 (dso, rela->r_offset,
+		  (read_une32 (dso, rela->r_offset) & 0xff000000) | val);
       break;
     case R_ARM_COPY:
       if (dso->ehdr.e_type == ET_EXEC)
@@ -218,7 +218,7 @@ arm_apply_conflict_rela (struct prelink_info *info, GElf_Rela *rela,
     case R_ARM_GLOB_DAT:
     case R_ARM_JUMP_SLOT:
     case R_ARM_ABS32:
-      buf_write_le32 (buf, rela->r_addend);
+      buf_write_ne32 (info->dso, buf, rela->r_addend);
       break;
     default:
       abort ();
@@ -240,14 +240,14 @@ arm_apply_rel (struct prelink_info *info, GElf_Rel *rel, char *buf)
       break;
     case R_ARM_GLOB_DAT:
     case R_ARM_JUMP_SLOT:
-      buf_write_le32 (buf, value);
+      buf_write_ne32 (info->dso, buf, value);
       break;
     case R_ARM_ABS32:
-      buf_write_le32 (buf, value + read_ule32 (info->dso, rel->r_offset));
+      buf_write_ne32 (info->dso, buf, value + read_une32 (info->dso, rel->r_offset));
       break;
     case R_ARM_PC24:
       val = value + rel->r_offset;
-      value = read_ule32 (info->dso, rel->r_offset) << 8;
+      value = read_une32 (info->dso, rel->r_offset) << 8;
       value = ((Elf32_Sword) value) >> 6;
       val += value;
       val >>= 2;
@@ -257,7 +257,7 @@ arm_apply_rel (struct prelink_info *info, GElf_Rel *rel, char *buf)
 	  return 1;
 	}
       val &= 0xffffff;
-      buf_write_le32 (buf, (buf_read_ule32 (buf) & 0xff000000) | val);
+      buf_write_ne32 (info->dso, buf, (buf_read_une32 (info->dso, buf) & 0xff000000) | val);
       break;
     case R_ARM_COPY:
       abort ();
@@ -285,7 +285,7 @@ arm_apply_rela (struct prelink_info *info, GElf_Rela *rela, char *buf)
     case R_ARM_GLOB_DAT:
     case R_ARM_JUMP_SLOT:
     case R_ARM_ABS32:
-      buf_write_le32 (buf, value + rela->r_addend);
+      buf_write_ne32 (info->dso, buf, value + rela->r_addend);
       break;
     case R_ARM_PC24:
       val = value + rela->r_addend - rela->r_offset;
@@ -296,7 +296,7 @@ arm_apply_rela (struct prelink_info *info, GElf_Rela *rela, char *buf)
 	  return 1;
 	}
       val &= 0xffffff;
-      buf_write_le32 (buf, (buf_read_ule32 (buf) & 0xff000000) | val);
+      buf_write_ne32 (info->dso, buf, (buf_read_une32 (info->dso, buf) & 0xff000000) | val);
       break;
     case R_ARM_COPY:
       abort ();
@@ -391,7 +391,7 @@ arm_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
 	  error (0, 0, "%s: R_ARM_PC24 overflow", dso->filename);
 	  return 1;
 	}
-      value = read_ule32 (dso, rela->r_offset) & 0xff000000;
+      value = read_une32 (dso, rela->r_offset) & 0xff000000;
       ret->r_addend = (Elf32_Sword) (value | (val & 0xffffff));
       ret->r_info = GELF_R_INFO (0, R_ARM_ABS32);
       break;
@@ -418,10 +418,10 @@ arm_rel_to_rela (DSO *dso, GElf_Rel *rel, GElf_Rela *rela)
       abort ();
     case R_ARM_RELATIVE:
     case R_ARM_ABS32:
-      rela->r_addend = (Elf32_Sword) read_ule32 (dso, rel->r_offset);
+      rela->r_addend = (Elf32_Sword) read_une32 (dso, rel->r_offset);
       break;
     case R_ARM_PC24:
-      rela->r_addend = read_ule32 (dso, rel->r_offset) << 8;
+      rela->r_addend = read_une32 (dso, rel->r_offset) << 8;
       rela->r_addend = ((Elf32_Sword) rela->r_addend) >> 6;
       break;
     case R_ARM_COPY:
@@ -445,15 +445,15 @@ arm_rela_to_rel (DSO *dso, GElf_Rela *rela, GElf_Rel *rel)
       abort ();
     case R_ARM_RELATIVE:
     case R_ARM_ABS32:
-      write_le32 (dso, rela->r_offset, rela->r_addend);
+      write_ne32 (dso, rela->r_offset, rela->r_addend);
       break;
     case R_ARM_PC24:
-      write_le32 (dso, rela->r_offset,
-		  (read_ule32 (dso, rela->r_offset) & 0xff000000)
+      write_ne32 (dso, rela->r_offset,
+		  (read_une32 (dso, rela->r_offset) & 0xff000000)
 		  | ((rela->r_addend >> 2) & 0xffffff));
       break;
     case R_ARM_GLOB_DAT:
-      write_le32 (dso, rela->r_offset, 0);
+      write_ne32 (dso, rela->r_offset, 0);
       break;
     }
   return 0;
@@ -479,7 +479,7 @@ arm_need_rel_to_rela (DSO *dso, int first, int last)
 	    switch (ELF32_R_TYPE (rel->r_info))
 	      {
 	      case R_ARM_ABS32:
-		val = read_ule32 (dso, rel->r_offset);
+		val = read_une32 (dso, rel->r_offset);
 		/* R_ARM_ABS32 with addend 0 can be converted
 		   to R_ARM_GLOB_DAT and we don't have to convert
 		   to RELA because of that.  */
@@ -521,7 +521,7 @@ arm_arch_prelink (struct prelink_info *info)
       if (i == dso->ehdr.e_shnum)
 	return 0;
       data = dso->shdr[i].sh_addr;
-      write_le32 (dso, dso->info[DT_PLTGOT] + 4, data);
+      write_ne32 (dso, dso->info[DT_PLTGOT] + 4, data);
     }
 
   return 0;
@@ -550,9 +550,9 @@ arm_arch_undo_prelink (DSO *dso)
 
       if (i == dso->ehdr.e_shnum)
 	return 0;
-      data = read_ule32 (dso, dso->info[DT_PLTGOT] + 4);
+      data = read_une32 (dso, dso->info[DT_PLTGOT] + 4);
       if (data == dso->shdr[i].sh_addr)
-	write_le32 (dso, dso->info[DT_PLTGOT] + 4, 0);
+	write_ne32 (dso, dso->info[DT_PLTGOT] + 4, 0);
     }
 
   return 0;
@@ -580,17 +580,17 @@ arm_undo_prelink_rel (DSO *dso, GElf_Rel *rel, GElf_Addr reladdr)
 	}
       else
 	{
-	  Elf32_Addr data = read_ule32 (dso, dso->shdr[sec].sh_addr + 4);
+	  Elf32_Addr data = read_une32 (dso, dso->shdr[sec].sh_addr + 4);
 
 	  assert (rel->r_offset >= dso->shdr[sec].sh_addr + 12);
 	  assert (((rel->r_offset - dso->shdr[sec].sh_addr) & 3) == 0);
-	  write_le32 (dso, rel->r_offset, data);
+	  write_ne32 (dso, rel->r_offset, data);
 	}
       break;
     case R_ARM_GLOB_DAT:
       sec = addr_to_sec (dso, rel->r_offset);
 
-      write_le32 (dso, rel->r_offset, 0);
+      write_ne32 (dso, rel->r_offset, 0);
       if (sec != -1)
 	{
 	  if (strcmp (strptr (dso, dso->ehdr.e_shstrndx,
