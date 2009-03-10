@@ -1,4 +1,15 @@
 2009-03-04  Daniel Jacobowitz  <dan@codesourcery.com>
+            Joseph Myers  <joseph@codesourcery.com>
+
+	* src/arch-arm.c (arm_prelink_rel, arm_prelink_rela,
+	arm_prelink_conflict_rel, arm_prelink_conflict_rela, arm_rel_to_rela,
+	arm_rela_to_rel, arm_need_rel_to_rela, arm_undo_prelink_rel,
+	arm_reloc_class): Handle TLS relocations.
+	* src/prelink.h (R_ARM_TLS_DTPMOD32, R_ARM_TLS_DTPOFF32,
+	R_ARM_TLS_TPOFF32): Define if R_ARM_TLS_DTPMOD32 not already
+	defined.
+
+2009-03-04  Daniel Jacobowitz  <dan@codesourcery.com>
 
 	* src/arch-arm.c (arm_adjust_dyn, arm_adjust_rel, arm_adjust_rela,
 	arm_prelink_rel, arm_prelink_rela, arm_apply_conflict_rela,

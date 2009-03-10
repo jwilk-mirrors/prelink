@@ -78,6 +78,12 @@
 #define R_MIPS_GLOB_DAT		51
 #endif
 
+#ifndef R_ARM_TLS_DTPMOD32
+#define R_ARM_TLS_DTPMOD32	17
+#define R_ARM_TLS_DTPOFF32	18
+#define R_ARM_TLS_TPOFF32	19
+#endif
+
 struct prelink_entry;
 struct prelink_info;
 struct PLArch;
