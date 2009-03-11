@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2009 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -493,6 +493,7 @@ PL_ARCH = {
   .R_JMP_SLOT = R_IA64_IPLTLSB,
   .R_COPY = -1,
   .R_RELATIVE = R_IA64_REL64LSB,
+  .rtype_class_valid = RTYPE_CLASS_VALID,
   .dynamic_linker = "/lib/ld-linux-ia64.so.2",
   .adjust_dyn = ia64_adjust_dyn,
   .adjust_rel = ia64_adjust_rel,

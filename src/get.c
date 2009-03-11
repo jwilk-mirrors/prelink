@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2007 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2007, 2009 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -275,7 +275,12 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 	  if (type)
 	    reloc_class = dso->arch->reloc_class (reloc_class);
 	  else
-	    reloc_class |= RTYPE_CLASS_VALID;
+	    {
+	      if ((reloc_class | RTYPE_CLASS_VALID) == RTYPE_CLASS_TLS)
+		reloc_class |= RTYPE_CLASS_VALID;
+	      else
+		reloc_class |= dso->arch->rtype_class_valid;
+	    }
 
 	  while (*symname == ' ' || *symname == '\t') ++symname;
 
@@ -452,7 +457,12 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 	  if (type)
 	    reloc_class = dso->arch->reloc_class (reloc_class);
 	  else
-	    reloc_class |= RTYPE_CLASS_VALID;
+	    {
+	      if ((reloc_class | RTYPE_CLASS_VALID) == RTYPE_CLASS_TLS)
+		reloc_class |= RTYPE_CLASS_VALID;
+	      else
+		reloc_class |= dso->arch->rtype_class_valid;
+	    }
 
 	  while (*symname == ' ' || *symname == '\t') ++symname;
 

@@ -1,4 +1,5 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2009
+   Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -159,6 +160,7 @@ struct PLArch
   int R_COPY;
   int R_JMP_SLOT;
   int R_RELATIVE;
+  int rtype_class_valid;
   int (*arch_adjust) (DSO *dso, GElf_Addr start, GElf_Addr adjust);
   int (*adjust_section) (DSO *dso, int n, GElf_Addr start, GElf_Addr adjust);
   int (*adjust_dyn) (DSO *dso, int n, GElf_Dyn *dyn, GElf_Addr start,

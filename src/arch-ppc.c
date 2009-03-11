@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2005 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2009 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -1122,6 +1122,7 @@ PL_ARCH = {
   .R_JMP_SLOT = R_PPC_JMP_SLOT,
   .R_COPY = R_PPC_COPY,
   .R_RELATIVE = R_PPC_RELATIVE,
+  .rtype_class_valid = RTYPE_CLASS_VALID,
   .dynamic_linker = "/lib/ld.so.1",
   .adjust_dyn = ppc_adjust_dyn,
   .adjust_rel = ppc_adjust_rel,

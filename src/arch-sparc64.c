@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2004 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2004, 2009 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -807,6 +807,7 @@ PL_ARCH = {
   .R_JMP_SLOT = R_SPARC_JMP_SLOT,
   .R_COPY = R_SPARC_COPY,
   .R_RELATIVE = R_SPARC_RELATIVE,
+  .rtype_class_valid = RTYPE_CLASS_VALID,
   .dynamic_linker = "/lib64/ld-linux.so.2",
   .adjust_dyn = sparc64_adjust_dyn,
   .adjust_rel = sparc64_adjust_rel,

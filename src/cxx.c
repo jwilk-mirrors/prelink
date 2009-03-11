@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2007 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2007, 2009 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -307,6 +307,7 @@ remove_redundant_cxx_conflicts (struct prelink_info *info)
   struct find_cxx_sym_cache **cache;
   struct find_cxx_sym_cache *binsymcache = NULL;
   int ret = 0;
+  int rtype_class_valid;
 
   /* Don't bother doing this for non-C++ programs.  */
   for (i = 0; i < info->ent->ndepends; ++i)
@@ -323,6 +324,8 @@ remove_redundant_cxx_conflicts (struct prelink_info *info)
       binsymtab = elf_getdata (scn, NULL);
       assert (elf_getdata (scn, binsymtab) == NULL);
     }
+
+  rtype_class_valid = info->dso->arch->rtype_class_valid;
 
   state = 0;
   memset (&fcs1, 0, sizeof (fcs1));
@@ -401,7 +404,7 @@ remove_redundant_cxx_conflicts (struct prelink_info *info)
       for (conflict = info->conflicts[fcs1.n].hash[cidx]; conflict;
 	   conflict = conflict->next)
 	if (conflict->symoff == symoff
-	    && conflict->reloc_class == RTYPE_CLASS_VALID)
+	    && conflict->reloc_class == rtype_class_valid)
 	  break;
 
       if (conflict == NULL)
@@ -558,7 +561,7 @@ check_pltref:
 			  for (l = 0; l < 251; l++)
 			    for (conflict = info->conflicts[fcs1.n].hash[l];
 				 conflict; conflict = conflict->next)
-			      if (conflict->reloc_class == RTYPE_CLASS_VALID
+			      if (conflict->reloc_class == rtype_class_valid
 				  && conflict->conflict.ent)
 				{
 				  size_t ccidx
@@ -595,7 +598,7 @@ check_pltref:
 		      && conflict->conflict.ent
 		      && (conflict->conflict.ent->base
 			  + conflict->conflictval == s->u.ent->base + s->value)
-		      && conflict->reloc_class == RTYPE_CLASS_VALID)
+		      && conflict->reloc_class == rtype_class_valid)
 		    {
 pltref_remove:
 		      if (verbose > 3)

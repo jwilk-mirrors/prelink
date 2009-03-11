@@ -999,6 +999,7 @@ PL_ARCH = {
   /* R_MIPS_REL32 relocations against symbol 0 do act as relative relocs,
      but those against other symbols don't.  */
   .R_RELATIVE = ~0U,
+  .rtype_class_valid = RTYPE_CLASS_VALID,
   .arch_adjust = mips_arch_adjust,
   .adjust_dyn = mips_adjust_dyn,
   .adjust_rel = mips_adjust_rel,

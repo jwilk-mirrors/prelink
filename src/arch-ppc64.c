@@ -1,4 +1,4 @@
-/* Copyright (C) 2002, 2003, 2004 Red Hat, Inc.
+/* Copyright (C) 2002, 2003, 2004, 2009 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2002.
 
    This program is free software; you can redistribute it and/or modify
@@ -771,13 +771,12 @@ ppc64_reloc_class (int reloc_type)
 {
   switch (reloc_type)
     {
-    case R_PPC64_COPY: return RTYPE_CLASS_COPY;
-    case R_PPC64_ADDR24: return RTYPE_CLASS_PLT;
+    case R_PPC64_COPY: return RTYPE_CLASS_COPY | RTYPE_CLASS_PLT;
     default:
       if (reloc_type >= R_PPC64_DTPMOD64
 	  && reloc_type <= R_PPC64_TPREL16_HIGHESTA)
 	return RTYPE_CLASS_TLS;
-      return RTYPE_CLASS_VALID;
+      return RTYPE_CLASS_PLT;
     }
 }
 
@@ -824,6 +823,7 @@ PL_ARCH = {
   .R_JMP_SLOT = R_PPC64_JMP_SLOT,
   .R_COPY = R_PPC64_COPY,
   .R_RELATIVE = R_PPC64_RELATIVE,
+  .rtype_class_valid = RTYPE_CLASS_PLT,
   .dynamic_linker = "/lib64/ld64.so.1",
   .adjust_section = ppc64_adjust_section,
   .adjust_dyn = ppc64_adjust_dyn,

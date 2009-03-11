@@ -1,3 +1,30 @@
+2009-03-11  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/prelink.h (PLArch): Add rtype_class_valid field.
+	* src/get.c (prelink_record_relocations): If not /4, or
+	dso->arch->rtype_class_valid instead of RTYPE_CLASS_VALID
+	into reloc_class.
+	* src/cxx.c (remove_redundant_cxx_conflicts): Use
+	info->dso->arch->rtype_class_valid instead of RTYPE_CLASS_VALID.
+	* src/arch-ppc64.c (ppc64_reloc_class): For R_PPC64_COPY return
+	RTYPE_CLASS_COPY | RTYPE_CLASS_PLT, for non-TLS relocs return
+	RTYPE_CLASS_PLT.
+	(PL_ARCH): Set rtype_class_valid to RTYPE_CLASS_PLT.
+	* src/arch-alpha.c (PL_ARCH): Set rtype_class_valid to
+	RTYPE_CLASS_VALID.
+	* src/arch-arm.c (PL_ARCH): Likewise.
+	* src/arch-cris.c (PL_ARCH): Likewise.
+	* src/arch-i386.c (PL_ARCH): Likewise.
+	* src/arch-ia64.c (PL_ARCH): Likewise.
+	* src/arch-mips.c (PL_ARCH): Likewise.
+	* src/arch-ppc.c (PL_ARCH): Likewise.
+	* src/arch-s390.c (PL_ARCH): Likewise.
+	* src/arch-s390x.c (PL_ARCH): Likewise.
+	* src/arch-sh.c (PL_ARCH): Likewise.
+	* src/arch-sparc.c (PL_ARCH): Likewise.
+	* src/arch-sparc64.c (PL_ARCH): Likewise.
+	* src/arch-x86_64.c (PL_ARCH): Likewise.
+
 2009-03-04  Joseph Myers  <joseph@codesourcery.com>
 
 	* testsuite/reloc2.sh, testsuite/tls3.sh: Add ARM to architectures
