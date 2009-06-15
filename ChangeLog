@@ -1,5 +1,10 @@
 2009-06-15  Jakub Jelinek  <jakub@redhat.com>
 
+	* src/Makefile.am (DEFS, AM_CFLAGS): Add -Wno-pointer-sign.
+	* src/Makefile.in: Regenerated.
+	* src/data.c (reopen_dso): Initialize data variable to avoid
+	warnings.
+
 	* src/dwarf2.h (DW_TAG_condition, DW_TAG_shared_type): Define.
 	(DW_OP_form_tls_address, DW_OP_call_frame_cfa, DW_OP_bit_piece,
 	DW_OP_implicit_value, DW_OP_stack_value, DW_OP_GNU_uninit,
