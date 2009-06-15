@@ -1,6 +1,6 @@
 2009-06-15  Jakub Jelinek  <jakub@redhat.com>
 
-	* dwarf2.h (DW_TAG_condition, DW_TAG_shared_type): Define.
+	* src/dwarf2.h (DW_TAG_condition, DW_TAG_shared_type): Define.
 	(DW_OP_form_tls_address, DW_OP_call_frame_cfa, DW_OP_bit_piece,
 	DW_OP_implicit_value, DW_OP_stack_value, DW_OP_GNU_uninit,
 	DW_OP_GNU_encoded_addr): Define.
@@ -11,7 +11,7 @@
 	Define.
 	(DW_LANG_PLI, DW_LANG_ObjC, DW_LANG_ObjC_plus_plus, DW_LANG_UPC,
 	DW_LANG_D): Define.
-	* dwarf2.c (debug_sections): Add .debug_pubtypes.
+	* src/dwarf2.c (debug_sections): Add .debug_pubtypes.
 	(DEBUG_PUBTYPES): Define.
 	(DEBUG_MACINFO, DEBUG_LOC, DEBUG_STR, DEBUG_FRAME, DEBUG_RANGES):
 	Adjust.
