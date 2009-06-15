@@ -67,7 +67,7 @@ s390_adjust_dyn (DSO *dso, int n, GElf_Dyn *dyn, GElf_Addr start,
 
 static int
 s390_adjust_rel (DSO *dso, GElf_Rel *rel, GElf_Addr start,
-		   GElf_Addr adjust)
+		 GElf_Addr adjust)
 {
   error (0, 0, "%s: S390 doesn't support REL relocs", dso->filename);
   return 1;
@@ -168,7 +168,7 @@ s390_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
 
 static int
 s390_apply_conflict_rela (struct prelink_info *info, GElf_Rela *rela,
-			  char *buf)
+			  char *buf, GElf_Addr dest_addr)
 {
   switch (GELF_R_TYPE (rela->r_info))
     {
@@ -238,7 +238,8 @@ s390_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
   GElf_Rela *ret;
 
   if (GELF_R_TYPE (rela->r_info) == R_390_RELATIVE
-      || GELF_R_TYPE (rela->r_info) == R_390_NONE)
+      || GELF_R_TYPE (rela->r_info) == R_390_NONE
+      || info->dso == dso)
     /* Fast path: nothing to do.  */
     return 0;
   conflict = prelink_conflict (info, GELF_R_SYM (rela->r_info),
@@ -257,6 +258,12 @@ s390_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
 	  return 0;
 	}
       value = 0;
+    }
+  else if (conflict->ifunc)
+    {
+      error (0, 0, "%s: STT_GNU_IFUNC not handled on S390 yet",
+	     dso->filename);
+      return 1;
     }
   else
     {

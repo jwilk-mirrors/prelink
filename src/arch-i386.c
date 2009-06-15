@@ -75,6 +75,7 @@ i386_adjust_rel (DSO *dso, GElf_Rel *rel, GElf_Addr start,
     {
     case R_386_RELATIVE:
     case R_386_JMP_SLOT:
+    case R_386_IRELATIVE:
       data = read_ule32 (dso, rel->r_offset);
       if (data >= start)
 	write_le32 (dso, rel->r_offset, data + adjust);
@@ -92,6 +93,7 @@ i386_adjust_rela (DSO *dso, GElf_Rela *rela, GElf_Addr start,
   switch (GELF_R_TYPE (rela->r_info))
     {
     case R_386_RELATIVE:
+    case R_386_IRELATIVE:
       if ((Elf32_Addr) rela->r_addend >= start)
 	{
 	  rela->r_addend += (Elf32_Sword) adjust;
@@ -117,6 +119,7 @@ i386_prelink_rel (struct prelink_info *info, GElf_Rel *rel, GElf_Addr reladdr)
   GElf_Addr value;
 
   if (GELF_R_TYPE (rel->r_info) == R_386_RELATIVE
+      || GELF_R_TYPE (rel->r_info) == R_386_IRELATIVE
       || GELF_R_TYPE (rel->r_info) == R_386_NONE)
     /* Fast path: nothing to do.  */
     return 0;
@@ -187,6 +190,7 @@ i386_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
   GElf_Addr value;
 
   if (GELF_R_TYPE (rela->r_info) == R_386_RELATIVE
+      || GELF_R_TYPE (rela->r_info) == R_386_IRELATIVE
       || GELF_R_TYPE (rela->r_info) == R_386_NONE)
     /* Fast path: nothing to do.  */
     return 0;
@@ -244,14 +248,26 @@ i386_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
 
 static int
 i386_apply_conflict_rela (struct prelink_info *info, GElf_Rela *rela,
-			  char *buf)
+			  char *buf, GElf_Addr dest_addr)
 {
+  GElf_Rela *ret;
+
   switch (GELF_R_TYPE (rela->r_info))
     {
     case R_386_GLOB_DAT:
     case R_386_JMP_SLOT:
     case R_386_32:
       buf_write_le32 (buf, rela->r_addend);
+      break;
+    case R_386_IRELATIVE:
+      if (dest_addr == 0)
+	return 5;
+      ret = prelink_conflict_add_rela (info);
+      if (ret == NULL)
+	return 1;
+      ret->r_offset = dest_addr;
+      ret->r_info = GELF_R_INFO (0, R_386_IRELATIVE);
+      ret->r_addend = rela->r_addend;
       break;
     default:
       abort ();
@@ -339,20 +355,25 @@ i386_prelink_conflict_rel (DSO *dso, struct prelink_info *info, GElf_Rel *rel,
 			       GELF_R_TYPE (rel->r_info));
   if (conflict == NULL)
     {
-      if (info->curtls == NULL)
-	return 0;
       switch (GELF_R_TYPE (rel->r_info))
 	{
 	/* Even local DTPMOD and TPOFF relocs need conflicts.  */
 	case R_386_TLS_DTPMOD32:
 	case R_386_TLS_TPOFF32:
 	case R_386_TLS_TPOFF:
+	  if (info->curtls == NULL || info->dso == dso)
+	    return 0;
+	  break;
+	/* Similarly IRELATIVE relocations always need conflicts.  */
+	case R_386_IRELATIVE:
 	  break;
 	default:
 	  return 0;
 	}
       value = 0;
     }
+  else if (info->dso == dso && !conflict->ifunc)
+    return 0;
   else
     {
       /* DTPOFF32 wants to see only real conflicts, not lookups
@@ -376,6 +397,11 @@ i386_prelink_conflict_rel (DSO *dso, struct prelink_info *info, GElf_Rel *rel,
       /* FALLTHROUGH */
     case R_386_JMP_SLOT:
       ret->r_addend = (Elf32_Sword) value;
+      if (conflict != NULL && conflict->ifunc)
+	ret->r_info = GELF_R_INFO (0, R_386_IRELATIVE);
+      break;
+    case R_386_IRELATIVE:
+      ret->r_addend = (Elf32_Sword) read_ule32 (dso, rel->r_offset);
       break;
     case R_386_32:
     case R_386_PC32:
@@ -441,20 +467,25 @@ i386_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
 			       GELF_R_TYPE (rela->r_info));
   if (conflict == NULL)
     {
-      if (info->curtls == NULL)
-	return 0;
       switch (GELF_R_TYPE (rela->r_info))
 	{
 	/* Even local DTPMOD and TPOFF relocs need conflicts.  */
 	case R_386_TLS_DTPMOD32:
 	case R_386_TLS_TPOFF32:
 	case R_386_TLS_TPOFF:
+	  if (info->curtls == NULL || info->dso == dso)
+	    return 0;
+	  break;
+	/* Similarly IRELATIVE relocations always need conflicts.  */
+	case R_386_IRELATIVE:
 	  break;
 	default:
 	  return 0;
 	}
       value = 0;
     }
+  else if (info->dso == dso && !conflict->ifunc)
+    return 0;
   else
     {
       /* DTPOFF32 wants to see only real conflicts, not lookups
@@ -477,11 +508,16 @@ i386_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
       ret->r_info = GELF_R_INFO (0, R_386_32);
       /* FALLTHROUGH */
     case R_386_JMP_SLOT:
+    case R_386_IRELATIVE:
       ret->r_addend = (Elf32_Sword) (value + rela->r_addend);
+      if (conflict != NULL && conflict->ifunc)
+	ret->r_info = GELF_R_INFO (0, R_386_IRELATIVE);
       break;
     case R_386_32:
       value += rela->r_addend;
       ret->r_addend = (Elf32_Sword) value;
+      if (conflict != NULL && conflict->ifunc)
+	ret->r_info = GELF_R_INFO (0, R_386_IRELATIVE);
       break;
     case R_386_PC32:
       ret->r_addend = (Elf32_Sword) (value + rela->r_addend - rela->r_offset);
@@ -539,6 +575,7 @@ i386_rel_to_rela (DSO *dso, GElf_Rel *rel, GElf_Rela *rela)
       /* We should be never converting .rel.plt into .rela.plt.  */
       abort ();
     case R_386_RELATIVE:
+    case R_386_IRELATIVE:
     case R_386_32:
     case R_386_PC32:
     case R_386_TLS_TPOFF32:
@@ -672,6 +709,7 @@ i386_undo_prelink_rel (DSO *dso, GElf_Rel *rel, GElf_Addr reladdr)
     {
     case R_386_NONE:
     case R_386_RELATIVE:
+    case R_386_IRELATIVE:
       break;
     case R_386_JMP_SLOT:
       sec = addr_to_sec (dso, rel->r_offset);
@@ -746,6 +784,7 @@ i386_rela_to_rel (DSO *dso, GElf_Rela *rela, GElf_Rel *rel)
 	 and thus never .rela.plt back to .rel.plt.  */
       abort ();
     case R_386_RELATIVE:
+    case R_386_IRELATIVE:
     case R_386_32:
     case R_386_PC32:
     case R_386_TLS_TPOFF32:

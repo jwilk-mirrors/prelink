@@ -30,7 +30,7 @@
 
 static int
 arm_adjust_dyn (DSO *dso, int n, GElf_Dyn *dyn, GElf_Addr start,
-		 GElf_Addr adjust)
+		GElf_Addr adjust)
 {
   if (dyn->d_tag == DT_PLTGOT)
     {
@@ -67,7 +67,7 @@ arm_adjust_dyn (DSO *dso, int n, GElf_Dyn *dyn, GElf_Addr start,
 
 static int
 arm_adjust_rel (DSO *dso, GElf_Rel *rel, GElf_Addr start,
-		 GElf_Addr adjust)
+		GElf_Addr adjust)
 {
   Elf32_Addr data;
   switch (GELF_R_TYPE (rel->r_info))
@@ -84,7 +84,7 @@ arm_adjust_rel (DSO *dso, GElf_Rel *rel, GElf_Addr start,
 
 static int
 arm_adjust_rela (DSO *dso, GElf_Rela *rela, GElf_Addr start,
-		  GElf_Addr adjust)
+		 GElf_Addr adjust)
 {
   Elf32_Addr data;
 
@@ -180,7 +180,7 @@ arm_prelink_rel (struct prelink_info *info, GElf_Rel *rel, GElf_Addr reladdr)
 
 static int
 arm_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
-		   GElf_Addr relaaddr)
+		  GElf_Addr relaaddr)
 {
   DSO *dso;
   GElf_Addr value;
@@ -248,7 +248,7 @@ arm_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
 
 static int
 arm_apply_conflict_rela (struct prelink_info *info, GElf_Rela *rela,
-			  char *buf)
+			 char *buf, GElf_Addr dest_addr)
 {
   switch (GELF_R_TYPE (rela->r_info))
     {
@@ -348,7 +348,7 @@ arm_apply_rela (struct prelink_info *info, GElf_Rela *rela, char *buf)
 
 static int
 arm_prelink_conflict_rel (DSO *dso, struct prelink_info *info, GElf_Rel *rel,
-			   GElf_Addr reladdr)
+			  GElf_Addr reladdr)
 {
   GElf_Addr value;
   struct prelink_conflict *conflict;
@@ -356,7 +356,8 @@ arm_prelink_conflict_rel (DSO *dso, struct prelink_info *info, GElf_Rel *rel,
   GElf_Rela *ret;
 
   if (GELF_R_TYPE (rel->r_info) == R_ARM_RELATIVE
-      || GELF_R_TYPE (rel->r_info) == R_ARM_NONE)
+      || GELF_R_TYPE (rel->r_info) == R_ARM_NONE
+      || info->dso == dso)
     /* Fast path: nothing to do.  */
     return 0;
   conflict = prelink_conflict (info, GELF_R_SYM (rel->r_info),
@@ -377,6 +378,12 @@ arm_prelink_conflict_rel (DSO *dso, struct prelink_info *info, GElf_Rel *rel,
 	  return 0;
 	}
       value = 0;
+    }
+  else if (conflict->ifunc)
+    {
+      error (0, 0, "%s: STT_GNU_IFUNC not handled on ARM yet",
+	     dso->filename);
+      return 1;
     }
   else
     {
@@ -446,7 +453,7 @@ arm_prelink_conflict_rel (DSO *dso, struct prelink_info *info, GElf_Rel *rel,
 
 static int
 arm_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
-			    GElf_Rela *rela, GElf_Addr relaaddr)
+			   GElf_Rela *rela, GElf_Addr relaaddr)
 {
   GElf_Addr value;
   struct prelink_conflict *conflict;
@@ -455,7 +462,8 @@ arm_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
   Elf32_Sword val;
 
   if (GELF_R_TYPE (rela->r_info) == R_ARM_RELATIVE
-      || GELF_R_TYPE (rela->r_info) == R_ARM_NONE)
+      || GELF_R_TYPE (rela->r_info) == R_ARM_NONE
+      || info->dso == dso)
     /* Fast path: nothing to do.  */
     return 0;
   conflict = prelink_conflict (info, GELF_R_SYM (rela->r_info),
@@ -477,6 +485,12 @@ arm_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
 	  return 0;
 	}
       value = 0;
+    }
+  else if (conflict->ifunc)
+    {
+      error (0, 0, "%s: STT_GNU_IFUNC not handled on ARM yet",
+	     dso->filename);
+      return 1;
     }
   else
     {

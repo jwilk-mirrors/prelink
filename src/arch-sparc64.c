@@ -32,7 +32,7 @@
 
 static int
 sparc64_adjust_dyn (DSO *dso, int n, GElf_Dyn *dyn, GElf_Addr start,
-		 GElf_Addr adjust)
+		    GElf_Addr adjust)
 {
   if (dyn->d_tag == DT_PLTGOT)
     {
@@ -57,7 +57,7 @@ sparc64_adjust_dyn (DSO *dso, int n, GElf_Dyn *dyn, GElf_Addr start,
 
 static int
 sparc64_adjust_rel (DSO *dso, GElf_Rel *rel, GElf_Addr start,
-		 GElf_Addr adjust)
+		    GElf_Addr adjust)
 {
   error (0, 0, "%s: Sparc doesn't support REL relocs", dso->filename);
   return 1;
@@ -65,7 +65,7 @@ sparc64_adjust_rel (DSO *dso, GElf_Rel *rel, GElf_Addr start,
 
 static int
 sparc64_adjust_rela (DSO *dso, GElf_Rela *rela, GElf_Addr start,
-		  GElf_Addr adjust)
+		     GElf_Addr adjust)
 {
   if (SPARC64_R_TYPE (rela->r_info) == R_SPARC_RELATIVE)
     {
@@ -84,7 +84,7 @@ sparc64_adjust_rela (DSO *dso, GElf_Rela *rela, GElf_Addr start,
 
 static int
 sparc64_prelink_rel (struct prelink_info *info, GElf_Rel *rel,
-		   GElf_Addr reladdr)
+		     GElf_Addr reladdr)
 {
   error (0, 0, "%s: Sparc doesn't support REL relocs", info->dso->filename);
   return 1;
@@ -166,7 +166,7 @@ sparc64_fixup_plt (DSO *dso, GElf_Rela *rela, GElf_Addr value)
 
 static int
 sparc64_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
-		    GElf_Addr relaaddr)
+		      GElf_Addr relaaddr)
 {
   DSO *dso = info->dso;
   GElf_Addr value;
@@ -309,7 +309,7 @@ sparc64_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
 
 static int
 sparc64_apply_conflict_rela (struct prelink_info *info, GElf_Rela *rela,
-			  char *buf)
+			     char *buf, GElf_Addr dest_addr)
 {
   switch (SPARC64_R_TYPE (rela->r_info))
     {
@@ -425,7 +425,7 @@ sparc64_apply_rela (struct prelink_info *info, GElf_Rela *rela, char *buf)
 
 static int
 sparc64_prelink_conflict_rel (DSO *dso, struct prelink_info *info,
-			    GElf_Rel *rel, GElf_Addr reladdr)
+			      GElf_Rel *rel, GElf_Addr reladdr)
 {
   error (0, 0, "%s: Sparc doesn't support REL relocs", dso->filename);
   return 1;
@@ -433,7 +433,7 @@ sparc64_prelink_conflict_rel (DSO *dso, struct prelink_info *info,
 
 static int
 sparc64_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
-			     GElf_Rela *rela, GElf_Addr relaaddr)
+			       GElf_Rela *rela, GElf_Addr relaaddr)
 {
   GElf_Addr value;
   struct prelink_conflict *conflict;
@@ -442,7 +442,8 @@ sparc64_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
   int r_type;
 
   if (SPARC64_R_TYPE (rela->r_info) == R_SPARC_RELATIVE
-      || SPARC64_R_TYPE (rela->r_info) == R_SPARC_NONE)
+      || SPARC64_R_TYPE (rela->r_info) == R_SPARC_NONE
+      || info->dso == dso)
     /* Fast path: nothing to do.  */
     return 0;
   conflict = prelink_conflict (info, GELF_R_SYM (rela->r_info),
@@ -463,6 +464,12 @@ sparc64_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
 	  return 0;
 	}
       value = 0;
+    }
+  else if (conflict->ifunc)
+    {
+      error (0, 0, "%s: STT_GNU_IFUNC not handled on SPARC64 yet",
+	     dso->filename);
+      return 1;
     }
   else
     {

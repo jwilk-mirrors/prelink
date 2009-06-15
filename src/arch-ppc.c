@@ -37,7 +37,7 @@
 
 static int
 ppc_adjust_dyn (DSO *dso, int n, GElf_Dyn *dyn, GElf_Addr start,
-		 GElf_Addr adjust)
+		GElf_Addr adjust)
 {
   if (dyn->d_tag == DT_PPC_GOT)
     {
@@ -116,7 +116,7 @@ ppc_adjust_dyn (DSO *dso, int n, GElf_Dyn *dyn, GElf_Addr start,
 
 static int
 ppc_adjust_rel (DSO *dso, GElf_Rel *rel, GElf_Addr start,
-		 GElf_Addr adjust)
+		GElf_Addr adjust)
 {
   error (0, 0, "%s: PowerPC doesn't support REL relocs", dso->filename);
   return 1;
@@ -124,7 +124,7 @@ ppc_adjust_rel (DSO *dso, GElf_Rel *rel, GElf_Addr start,
 
 static int
 ppc_adjust_rela (DSO *dso, GElf_Rela *rela, GElf_Addr start,
-		  GElf_Addr adjust)
+		 GElf_Addr adjust)
 {
   if (GELF_R_TYPE (rela->r_info) == R_PPC_RELATIVE)
     {
@@ -143,7 +143,7 @@ ppc_adjust_rela (DSO *dso, GElf_Rela *rela, GElf_Addr start,
 
 static int
 ppc_prelink_rel (struct prelink_info *info, GElf_Rel *rel,
-		   GElf_Addr reladdr)
+		 GElf_Addr reladdr)
 {
   error (0, 0, "%s: PowerPC doesn't support REL relocs", info->dso->filename);
   return 1;
@@ -201,7 +201,7 @@ ppc_fixup_plt (DSO *dso, GElf_Rela *rela, GElf_Addr value)
 
 static int
 ppc_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
-		    GElf_Addr relaaddr)
+		  GElf_Addr relaaddr)
 {
   DSO *dso = info->dso;
   GElf_Addr value;
@@ -330,7 +330,7 @@ ppc_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
 
 static int
 ppc_apply_conflict_rela (struct prelink_info *info, GElf_Rela *rela,
-			  char *buf)
+			 char *buf, GElf_Addr dest_addr)
 {
   switch (GELF_R_TYPE (rela->r_info))
     {
@@ -418,7 +418,7 @@ ppc_apply_rela (struct prelink_info *info, GElf_Rela *rela, char *buf)
 
 static int
 ppc_prelink_conflict_rel (DSO *dso, struct prelink_info *info,
-			    GElf_Rel *rel, GElf_Addr reladdr)
+			  GElf_Rel *rel, GElf_Addr reladdr)
 {
   error (0, 0, "%s: PowerPC doesn't support REL relocs", dso->filename);
   return 1;
@@ -426,7 +426,7 @@ ppc_prelink_conflict_rel (DSO *dso, struct prelink_info *info,
 
 static int
 ppc_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
-			     GElf_Rela *rela, GElf_Addr relaaddr)
+			   GElf_Rela *rela, GElf_Addr relaaddr)
 {
   GElf_Addr value;
   struct prelink_conflict *conflict;
@@ -435,7 +435,8 @@ ppc_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
   int r_type;
 
   if (GELF_R_TYPE (rela->r_info) == R_PPC_RELATIVE
-      || GELF_R_TYPE (rela->r_info) == R_PPC_NONE)
+      || GELF_R_TYPE (rela->r_info) == R_PPC_NONE
+      || info->dso == dso)
     /* Fast path: nothing to do.  */
     return 0;
   conflict = prelink_conflict (info, GELF_R_SYM (rela->r_info),
@@ -458,6 +459,12 @@ ppc_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
 	  return 0;
 	}
       value = 0;
+    }
+  else if (conflict->ifunc)
+    {
+      error (0, 0, "%s: STT_GNU_IFUNC not handled on PowerPC yet",
+	     dso->filename);
+      return 1;
     }
   else
     {

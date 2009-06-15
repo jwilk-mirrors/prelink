@@ -30,7 +30,7 @@
 
 static int
 x86_64_adjust_dyn (DSO *dso, int n, GElf_Dyn *dyn, GElf_Addr start,
-		 GElf_Addr adjust)
+		   GElf_Addr adjust)
 {
   if (dyn->d_tag == DT_PLTGOT)
     {
@@ -75,7 +75,7 @@ x86_64_adjust_rel (DSO *dso, GElf_Rel *rel, GElf_Addr start,
 
 static int
 x86_64_adjust_rela (DSO *dso, GElf_Rela *rela, GElf_Addr start,
-		  GElf_Addr adjust)
+		    GElf_Addr adjust)
 {
   Elf64_Addr addr;
 
@@ -89,6 +89,10 @@ x86_64_adjust_rela (DSO *dso, GElf_Rela *rela, GElf_Addr start,
 	  rela->r_addend += adjust;
 	}
       break;
+    case R_X86_64_IRELATIVE:
+      if (rela->r_addend >= start)
+	rela->r_addend += adjust;
+      /* FALLTHROUGH */
     case R_X86_64_JUMP_SLOT:
       addr = read_ule64 (dso, rela->r_offset);
       if (addr >= start)
@@ -113,7 +117,8 @@ x86_64_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
   GElf_Addr value;
 
   dso = info->dso;
-  if (GELF_R_TYPE (rela->r_info) == R_X86_64_NONE)
+  if (GELF_R_TYPE (rela->r_info) == R_X86_64_NONE
+      || GELF_R_TYPE (rela->r_info) == R_X86_64_IRELATIVE)
     return 0;
   else if (GELF_R_TYPE (rela->r_info) == R_X86_64_RELATIVE)
     {
@@ -169,14 +174,25 @@ x86_64_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
 
 static int
 x86_64_apply_conflict_rela (struct prelink_info *info, GElf_Rela *rela,
-			  char *buf)
+			    char *buf, GElf_Addr dest_addr)
 {
+  GElf_Rela *ret;
   switch (GELF_R_TYPE (rela->r_info))
     {
     case R_X86_64_GLOB_DAT:
     case R_X86_64_JUMP_SLOT:
     case R_X86_64_64:
       buf_write_le64 (buf, rela->r_addend);
+      break;
+    case R_X86_64_IRELATIVE:
+      if (dest_addr == 0)
+	return 5;
+      ret = prelink_conflict_add_rela (info);
+      if (ret == NULL)
+	return 1;
+      ret->r_offset = dest_addr;
+      ret->r_info = GELF_R_INFO (0, R_X86_64_IRELATIVE);
+      ret->r_addend = rela->r_addend;
       break;
     case R_X86_64_32:
       buf_write_le32 (buf, rela->r_addend);
@@ -252,19 +268,24 @@ x86_64_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
 			       GELF_R_TYPE (rela->r_info));
   if (conflict == NULL)
     {
-      if (info->curtls == NULL)
-	return 0;
       switch (GELF_R_TYPE (rela->r_info))
 	{
 	/* Even local DTPMOD and TPOFF relocs need conflicts.  */
 	case R_X86_64_DTPMOD64:
 	case R_X86_64_TPOFF64:
+	  if (info->curtls == NULL || info->dso == dso)
+	    return 0;
+	  break;
+	/* Similarly IRELATIVE relocations always need conflicts.  */
+	case R_X86_64_IRELATIVE:
 	  break;
 	default:
 	  return 0;
 	}
       value = 0;
     }
+  else if (info->dso == dso && !conflict->ifunc)
+    return 0;
   else
     {
       /* DTPOFF wants to see only real conflicts, not lookups
@@ -288,7 +309,10 @@ x86_64_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
       /* FALLTHROUGH */
     case R_X86_64_JUMP_SLOT:
     case R_X86_64_64:
+    case R_X86_64_IRELATIVE:
       ret->r_addend = value + rela->r_addend;
+      if (conflict != NULL && conflict->ifunc)
+	ret->r_info = GELF_R_INFO (0, R_X86_64_IRELATIVE);
       break;
     case R_X86_64_32:
       value += rela->r_addend;
@@ -422,6 +446,7 @@ x86_64_undo_prelink_rela (DSO *dso, GElf_Rela *rela, GElf_Addr relaaddr)
     {
     case R_X86_64_NONE:
     case R_X86_64_RELATIVE:
+    case R_X86_64_IRELATIVE:
       break;
     case R_X86_64_JUMP_SLOT:
       sec = addr_to_sec (dso, rela->r_offset);

@@ -451,9 +451,9 @@ remove_redundant_cxx_conflicts (struct prelink_info *info)
       mem2 = mem1 + fcs1.sym.st_size;
 
       if (get_relocated_mem (info, fcs1.dso, fcs1.sym.st_value, mem1,
-			     fcs1.sym.st_size)
+			     fcs1.sym.st_size, 0)
 	  || get_relocated_mem (info, fcs2.dso, fcs2.sym.st_value, mem2,
-				fcs1.sym.st_size)
+				fcs1.sym.st_size, 0)
 	  || memcmp (mem1, mem2, fcs1.sym.st_size) != 0)
 	{
 	  free (mem1);

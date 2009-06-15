@@ -1,5 +1,74 @@
 2009-06-15  Jakub Jelinek  <jakub@redhat.com>
 
+	* src/prelink.h (R_386_IRELATIVE, R_X86_64_IRELATIVE): Define
+	if not defined.
+	(struct PLArch): Add dest_addr argument to apply_conflict_rela
+	hook.
+	(struct prelink_conflict): Change used type from int to unsigned
+	char, add ifunc field.
+	(get_relocated_mem): Add dest_addr argument.
+	* src/get.c (prelink_record_relocations): Handle lookups resolving
+	to STT_GNU_IFUNC symbols.
+	* src/conflict.c (get_relocated_mem): Add dest_addr argument, pass
+	it through to the apply_conflict_rela hook.  Fail if
+	apply_conflict_rela hook failed.
+	(prelink_build_conflicts): Build conflicts even in the executable,
+	and for libraries even if no conflicts were reported by the dynamic
+	linker.  In the executable ignore any unused conflicts except for
+	ifunc conflicts.  Adjust get_relocated_mem callers.
+	* src/cxx.c (remove_redundant_cxx_conflicts): Adjust
+	get_relocated_mem callers.
+	* arch-alpha.c (alpha_apply_conflict_rela): Add dest_addr argument.
+	(alpha_prelink_conflict_rela): Return early if info->dso == dso.
+	* arch-arm.c (arm_apply_conflict_rela): Add dest_addr argument.
+	(arm_prelink_conflict_rel, arm_prelink_conflict_rela): Return early
+	if info->dso == dso.
+	* arch-cris.c (cris_apply_conflict_rela): Add dest_addr argument.
+	(cris_prelink_conflict_rela): Return early if info->dso == dso.
+	* arch-ia64.c (ia64_apply_conflict_rela): Add dest_addr argument.
+	(ia64_prelink_conflict_rela): Return early if info->dso == dso.
+	* arch-ppc.c (ppc_apply_conflict_rela): Add dest_addr argument.
+	(ppc_prelink_conflict_rela): Return early if info->dso == dso.
+	* arch-ppc64.c (ppc64_apply_conflict_rela): Add dest_addr argument.
+	(ppc64_prelink_conflict_rela): Return early if info->dso == dso.
+	* arch-s390.c (s390_apply_conflict_rela): Add dest_addr argument.
+	(s390_prelink_conflict_rela): Return early if info->dso == dso.
+	* arch-s390x.c (s390x_apply_conflict_rela): Add dest_addr argument.
+	(s390x_prelink_conflict_rela): Return early if info->dso == dso.
+	* arch-sh.c (sh_apply_conflict_rela): Add dest_addr argument.
+	(sh_prelink_conflict_rela): Return early if info->dso == dso.
+	* arch-sparc.c (sparc_apply_conflict_rela): Add dest_addr argument.
+	(sparc_prelink_conflict_rela): Return early if info->dso == dso.
+	* arch-sparc64.c (sparc64_apply_conflict_rela): Add dest_addr argument.
+	(sparc64_prelink_conflict_rela): Return early if info->dso == dso.
+	* arch-mips.c (mipz_apply_conflict_rela): Add dest_addr argument.
+	(mips_prelink_conflict_reloc, mips_arch_prelink_conflict): Return
+	early if info->dso == dso.
+	* arch-i386.c (i386_adjust_rel, i386_adjust_rela, i386_prelink_rel,
+	i386_prelink_rela, i386_rel_to_rela, i386_undo_prelink_rel,
+	i386_rela_to_rel): Handle R_386_IRELATIVE.
+	(i386_apply_conflict_rela): Add dest_addr argument, handle
+	R_386_IRELATIVE.
+	(i386_prelink_conflict_rel, i386_prelink_conflict_rela): Handle
+	R_386_IRELATIVE and conflict->ifunc conflicts.
+	* arch-x86_64.c (x86_64_adjust_rela, x86_64_prelink_rela,
+	x86_64_undo_prelink_rela): Handle R_X86_64_IRELATIVE.
+	(x86_64_apply_conflict_rela): Handle R_X86_64_IRELATIVE and
+	conflict->ifunc conflicts.
+	* testsuite/Makefile.am (TESTS): Add ifunc1.sh, ifunc2.sh and
+	ifunc3.sh.
+	* testsuite/Makefile.in: Regenerated.
+	* testsuite/ifunc1.sh: New test.
+	* testsuite/ifunc2.sh: New test.
+	* testsuite/ifunc3.sh: New test.
+	* testsuite/ifunc1.c: New file.
+	* testsuite/ifunc1lib1.c: New file.
+	* testsuite/ifunc1lib2.c: New file.
+	* testsuite/ifunc3.c: New file.
+	* testsuite/ifunc3lib1.c: New file.
+	* testsuite/ifunc.h: New file.
+	* testsuite/ifunctest.c: New file.
+
 	* src/Makefile.am (DEFS, AM_CFLAGS): Add -Wno-pointer-sign.
 	* src/Makefile.in: Regenerated.
 	* src/data.c (reopen_dso): Initialize data variable to avoid

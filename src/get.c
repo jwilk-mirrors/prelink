@@ -241,7 +241,7 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
   do
     {
       unsigned long long symstart, symoff, valstart[3], value[3];
-      int reloc_class, len, type = 1;
+      int reloc_class, len, type = 1, ifunc = 0;
       char *symname;
 
       r = strchr (buffer, '\n');
@@ -276,7 +276,13 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 	    reloc_class = dso->arch->reloc_class (reloc_class);
 	  else
 	    {
-	      if ((reloc_class | RTYPE_CLASS_VALID) == RTYPE_CLASS_TLS)
+	      if (reloc_class & 8)
+		{
+		  reloc_class = ((reloc_class & ~8)
+				 | dso->arch->rtype_class_valid);
+		  ifunc = 1;
+		}
+	      else if ((reloc_class | RTYPE_CLASS_VALID) == RTYPE_CLASS_TLS)
 		reloc_class |= RTYPE_CLASS_VALID;
 	      else
 		reloc_class |= dso->arch->rtype_class_valid;
@@ -287,7 +293,8 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 	  ent = NULL;
 	  tls = NULL;
 	  if (symstart == deps[0].start
-	      || (reloc_class == RTYPE_CLASS_TLS && info->conflicts))
+	      || ((reloc_class == RTYPE_CLASS_TLS || ifunc)
+		  && info->conflicts))
 	    {
 	      for (i = 0; i < ndeps; i++)
 		if (deps[i].start == valstart[0])
@@ -316,7 +323,7 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 		}
 	    }
 
-	  if (symstart == deps[0].start)
+	  if (symstart == deps[0].start && (!ifunc || info->conflicts == NULL))
 	    {
 	      /* Only interested in relocations from the current object.  */
 	      if (symoff < info->symtab_start || symoff >= info->symtab_end)
@@ -326,7 +333,8 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 		  goto error_out;
 		}
 
-	      if (ent == info->ent && reloc_class != RTYPE_CLASS_TLS)
+	      if (ent == info->ent
+		  && reloc_class != RTYPE_CLASS_TLS)
 		value[0] = adjust_old_to_new (info->dso, value[0]);
 
 	      s = &info->symbols[(symoff - info->symtab_start)
@@ -371,13 +379,14 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 		  s->next = NULL;
 		}
 	    }
-	  else if (reloc_class == RTYPE_CLASS_TLS && info->conflicts)
+	  else if ((reloc_class == RTYPE_CLASS_TLS || ifunc)
+		   && info->conflicts)
 	    {
 	      struct prelink_conflict *conflict;
 	      int symowner;
 	      size_t idx;
 
-	      for (symowner = 1; symowner < ndeps; symowner++)
+	      for (symowner = 0; symowner < ndeps; symowner++)
 		if (deps[symowner].start == symstart)
 		  break;
 	      if (symowner == ndeps)
@@ -395,8 +404,12 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 		if (conflict->symoff == symoff
 		    && conflict->reloc_class == reloc_class)
 		  {
-		    if (conflict->lookup.tls != tls
-			|| conflict->conflict.tls != tls
+		    if ((reloc_class != RTYPE_CLASS_TLS
+			 && (conflict->lookup.ent != ent
+			     || conflict->conflict.ent != ent))
+			|| (reloc_class == RTYPE_CLASS_TLS
+			    && (conflict->lookup.tls != tls
+				|| conflict->conflict.tls != tls))
 			|| conflict->lookupval != value[0]
 			|| conflict->conflictval != value[0])
 		      {
@@ -418,13 +431,22 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 		  conflict->next = info->conflicts[symowner].hash[idx];
 		  conflict->next2 = NULL;
 		  info->conflicts[symowner].hash[idx] = conflict;
-		  conflict->lookup.tls = tls;
-		  conflict->conflict.tls = tls;
+		  if (reloc_class != RTYPE_CLASS_TLS)
+		    {
+		      conflict->lookup.ent = ent;
+		      conflict->conflict.ent = ent;
+		    }
+		  else
+		    {
+		      conflict->lookup.tls = tls;
+		      conflict->conflict.tls = tls;
+		    }
 		  conflict->lookupval = value[0];
 		  conflict->conflictval = value[0];
 		  conflict->symoff = symoff;
 		  conflict->reloc_class = reloc_class;
 		  conflict->used = 0;
+		  conflict->ifunc = ifunc;
 		  if (++info->conflicts[symowner].count == 16)
 		    conflict_hash_init (&info->conflicts[symowner]);
 		}
@@ -458,7 +480,13 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 	    reloc_class = dso->arch->reloc_class (reloc_class);
 	  else
 	    {
-	      if ((reloc_class | RTYPE_CLASS_VALID) == RTYPE_CLASS_TLS)
+	      if (reloc_class & 8)
+		{
+		  reloc_class = ((reloc_class & ~8)
+				 | dso->arch->rtype_class_valid);
+		  ifunc = 1;
+		}
+	      else if ((reloc_class | RTYPE_CLASS_VALID) == RTYPE_CLASS_TLS)
 		reloc_class |= RTYPE_CLASS_VALID;
 	      else
 		reloc_class |= dso->arch->rtype_class_valid;
@@ -571,6 +599,7 @@ prelink_record_relocations (struct prelink_info *info, FILE *f,
 		  conflict->symoff = symoff;
 		  conflict->reloc_class = reloc_class;
 		  conflict->used = 0;
+		  conflict->ifunc = ifunc;
 		  if (++info->conflicts[symowner].count == 16)
 		    conflict_hash_init (&info->conflicts[symowner]);
 		}

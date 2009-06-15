@@ -550,8 +550,11 @@ mips_prelink_conflict_reloc (DSO *dso, struct prelink_info *info,
 {
   GElf_Addr value;
   struct prelink_conflict *conflict;
-  struct prelink_tls *tls;
+  struct prelink_tls *tls = NULL;
   GElf_Rela *entry;
+
+  if (info->dso == dso)
+    return 0;
 
   conflict = prelink_conflict (info, GELF_R_SYM (r_info),
 			       GELF_R_TYPE (r_info));
@@ -572,6 +575,12 @@ mips_prelink_conflict_reloc (DSO *dso, struct prelink_info *info,
 	default:
 	  return 0;
 	}
+    }
+  else if (conflict->ifunc)
+    {
+      error (0, 0, "%s: STT_GNU_IFUNC not handled on MIPS yet",
+	     dso->filename);
+      return 1;
     }
   else
     {
@@ -652,7 +661,7 @@ mips_arch_prelink_conflict (DSO *dso, struct prelink_info *info)
   struct prelink_conflict *conflict;
   GElf_Rela *entry;
 
-  if (dso->info[DT_PLTGOT] == 0)
+  if (info->dso == dso || dso->info[DT_PLTGOT] == 0)
     return 0;
 
   /* Add a conflict for every global GOT entry that does not hold the
@@ -685,7 +694,7 @@ mips_arch_prelink_conflict (DSO *dso, struct prelink_info *info)
 
 static int
 mips_apply_conflict_rela (struct prelink_info *info, GElf_Rela *rela,
-			  char *buf)
+			  char *buf, GElf_Addr dest_addr)
 {
   switch (GELF_R_TYPE (rela->r_info))
     {
