@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2009 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -71,6 +71,8 @@
 #define DW_TAG_unspecified_type		0x3b
 #define DW_TAG_partial_unit		0x3c
 #define DW_TAG_imported_unit		0x3d
+#define DW_TAG_condition		0x3f
+#define DW_TAG_shared_type		0x40
 #define DW_TAG_MIPS_loop		0x4081
 #define DW_TAG_format_label		0x4101
 #define DW_TAG_function_template	0x4102
@@ -348,7 +350,14 @@
 #define DW_OP_call2			0x98
 #define DW_OP_call4			0x99
 #define DW_OP_call_ref			0x9a
+#define DW_OP_form_tls_address		0x9b
+#define DW_OP_call_frame_cfa		0x9c
+#define DW_OP_bit_piece			0x9d
+#define DW_OP_implicit_value		0x9e
+#define DW_OP_stack_value		0x9f
 #define DW_OP_GNU_push_tls_address	0xe0
+#define DW_OP_GNU_uninit		0xf0
+#define DW_OP_GNU_encoded_addr		0xf1
 #define DW_OP_lo_user			0xe0
 #define DW_OP_hi_user			0xff
 
@@ -362,6 +371,12 @@
 #define DW_ATE_unsigned			0x7
 #define DW_ATE_unsigned_char		0x8
 #define DW_ATE_imaginary_float		0x9
+#define DW_ATE_packed_decimal		0xa
+#define DW_ATE_numeric_string		0xb
+#define DW_ATE_edited			0xc
+#define DW_ATE_signed_fixed		0xd
+#define DW_ATE_unsigned_fixed		0xe
+#define DW_ATE_decimal_float		0xf
 #define	DW_ATE_lo_user			0x80
 #define	DW_ATE_hi_user			0xff
 
@@ -437,6 +452,9 @@
 #define DW_CFA_offset_extended_sf	0x11
 #define DW_CFA_def_cfa_sf		0x12
 #define DW_CFA_def_cfa_offset_sf	0x13
+#define DW_CFA_val_offset		0x14
+#define DW_CFA_val_offset_sf		0x15
+#define DW_CFA_val_expression		0x16
 #define DW_CFA_MIPS_advance_loc8	0x1d
 #define DW_CFA_GNU_window_save		0x2d
 #define DW_CFA_GNU_args_size		0x2e
@@ -468,6 +486,11 @@
 #define DW_LANG_C99			0x000c
 #define DW_LANG_Ada95			0x000d
 #define DW_LANG_Fortran95		0x000e
+#define DW_LANG_PLI			0x000f
+#define DW_LANG_ObjC			0x0010
+#define DW_LANG_ObjC_plus_plus		0x0011
+#define DW_LANG_UPC			0x0012
+#define DW_LANG_D			0x0013
 #define DW_LANG_Mips_Assembler		0x8001
 #define DW_LANG_lo_user			0x8000
 #define DW_LANG_hi_user			0xffff

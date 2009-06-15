@@ -1,3 +1,38 @@
+2009-06-15  Jakub Jelinek  <jakub@redhat.com>
+
+	* dwarf2.h (DW_TAG_condition, DW_TAG_shared_type): Define.
+	(DW_OP_form_tls_address, DW_OP_call_frame_cfa, DW_OP_bit_piece,
+	DW_OP_implicit_value, DW_OP_stack_value, DW_OP_GNU_uninit,
+	DW_OP_GNU_encoded_addr): Define.
+	(DW_ATE_packed_decimal, DW_ATE_numeric_string, DW_ATE_edited,
+	DW_ATE_signed_fixed, DW_ATE_unsigned_fixed, DW_ATE_decimal_float):
+	Define.
+	(DW_CFA_val_offset, DW_CFA_val_offset_sf, DW_CFA_val_expression):
+	Define.
+	(DW_LANG_PLI, DW_LANG_ObjC, DW_LANG_ObjC_plus_plus, DW_LANG_UPC,
+	DW_LANG_D): Define.
+	* dwarf2.c (debug_sections): Add .debug_pubtypes.
+	(DEBUG_PUBTYPES): Define.
+	(DEBUG_MACINFO, DEBUG_LOC, DEBUG_STR, DEBUG_FRAME, DEBUG_RANGES):
+	Adjust.
+	(struct cu_data): Add cu_version field.
+	(read_abbrev): Adjust error messages not to be DWARF-2 specific.
+	(adjust_location_list): Likewise.  Fix up DW_OP_call_ref handling,
+	handle DW_OP_form_tls_address, DW_OP_call_frame_cfa,
+	DW_OP_GNU_uninit, DW_OP_bit_piece, DW_OP_stack_value and
+	DW_OP_implicit_value.
+	(adjust_attributes): For cu->cu_version == 2 skip ptr_size bytes
+	instead of just 4.  Adjust error messages not to be DWARF-2
+	specific.
+	(adjust_dwarf2_line): Handle version 3 of .debug_line.
+	(adjust_dwarf2_frame): Just that CIE version is 1 or 3, for
+	version 1 skip just one byte instead of uleb128 for return address
+	column.  Handle DW_CFA_val_offset, DW_CFA_val_offset_sf and
+	DW_CFA_val_expression.
+	(adjust_dwarf2): Handle version 3 of .debug_info, initialize
+	cu.cu_version.  Adjust error messages not to be DWARF-2 specific.
+	Note that .debug_pubtypes doesn't need adjustments.
+
 2009-03-11  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/prelink.h (PLArch): Add rtype_class_valid field.

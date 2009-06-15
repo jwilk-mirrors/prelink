@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2005, 2006 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2005, 2006, 2009 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -155,16 +155,18 @@ static struct
 #define DEBUG_LINE	2
 #define DEBUG_ARANGES	3
 #define DEBUG_PUBNAMES	4
-#define DEBUG_MACINFO	5
-#define DEBUG_LOC	6
-#define DEBUG_STR	7
-#define DEBUG_FRAME	8
-#define DEBUG_RANGES	9
+#define DEBUG_PUBTYPES	5
+#define DEBUG_MACINFO	6
+#define DEBUG_LOC	7
+#define DEBUG_STR	8
+#define DEBUG_FRAME	9
+#define DEBUG_RANGES	10
     { ".debug_info", NULL, 0, 0 },
     { ".debug_abbrev", NULL, 0, 0 },
     { ".debug_line", NULL, 0, 0 },
     { ".debug_aranges", NULL, 0, 0 },
     { ".debug_pubnames", NULL, 0, 0 },
+    { ".debug_pubtypes", NULL, 0, 0 },
     { ".debug_macinfo", NULL, 0, 0 },
     { ".debug_loc", NULL, 0, 0 },
     { ".debug_str", NULL, 0, 0 },
@@ -191,6 +193,7 @@ struct cu_data
   {
     GElf_Addr cu_entry_pc;
     GElf_Addr cu_low_pc;
+    unsigned char cu_version;
   };
 
 static hashval_t
@@ -250,7 +253,7 @@ no_memory:
 	}
       if (*slot != NULL)
 	{
-	  error (0, 0, "%s: Duplicate DWARF-2 abbreviation %d", dso->filename,
+	  error (0, 0, "%s: Duplicate DWARF abbreviation %d", dso->filename,
 		 t->entry);
 	  free (t);
 	  htab_delete (h);
@@ -270,7 +273,7 @@ no_memory:
 	  form = read_uleb128 (ptr);
 	  if (form == 2 || form > DW_FORM_indirect)
 	    {
-	      error (0, 0, "%s: Unknown DWARF-2 DW_FORM_%d", dso->filename, form);
+	      error (0, 0, "%s: Unknown DWARF DW_FORM_%d", dso->filename, form);
 	      htab_delete (h);
 	      return NULL;
 	    }
@@ -280,7 +283,7 @@ no_memory:
 	}
       if (read_uleb128 (ptr) != 0)
 	{
-	  error (0, 0, "%s: DWARF-2 abbreviation does not end with 2 zeros",
+	  error (0, 0, "%s: DWARF abbreviation does not end with 2 zeros",
 		 dso->filename);
 	  htab_delete (h);
 	  return NULL;
@@ -340,8 +343,11 @@ adjust_location_list (DSO *dso, unsigned char *ptr, size_t len,
 	case DW_OP_reg0 ... DW_OP_reg31:
 	case DW_OP_nop:
 	case DW_OP_push_object_address:
-	case DW_OP_call_ref:
+	case DW_OP_form_tls_address:
+	case DW_OP_call_frame_cfa:
+	case DW_OP_stack_value:
 	case DW_OP_GNU_push_tls_address:
+	case DW_OP_GNU_uninit:
 	  break;
 	case DW_OP_const1u:
 	case DW_OP_pick:
@@ -360,6 +366,7 @@ adjust_location_list (DSO *dso, unsigned char *ptr, size_t len,
 	case DW_OP_const4u:
 	case DW_OP_const4s:
 	case DW_OP_call4:
+	case DW_OP_call_ref:
 	  ptr += 4;
 	  break;
 	case DW_OP_const8u:
@@ -376,11 +383,17 @@ adjust_location_list (DSO *dso, unsigned char *ptr, size_t len,
 	  read_uleb128 (ptr);
 	  break;
 	case DW_OP_bregx:
+	case DW_OP_bit_piece:
 	  read_uleb128 (ptr);
 	  read_uleb128 (ptr);
 	  break;
+	case DW_OP_implicit_value:
+	  {
+	    uint32_t len = read_uleb128 (ptr);
+	    ptr += len;
+	  }
 	default:
-	  error (0, 0, "%s: Unknown DWARF-2 DW_OP_%d", dso->filename, op);
+	  error (0, 0, "%s: Unknown DWARF DW_OP_%d", dso->filename, op);
 	  return 1;
 	}
     }
@@ -596,6 +609,11 @@ adjust_attributes (DSO *dso, unsigned char *ptr, struct abbrev_tag *t,
 	      read_uleb128 (ptr);
 	      break;
 	    case DW_FORM_ref_addr:
+	      if (cu->cu_version == 2)
+		ptr += ptr_size;
+	      else
+		ptr += 4;
+	      break;
 	    case DW_FORM_strp:
 	      ptr += 4;
 	      break;
@@ -622,7 +640,7 @@ adjust_attributes (DSO *dso, unsigned char *ptr, struct abbrev_tag *t,
 	      assert (len < UINT_MAX);
 	      break;
 	    default:
-	      error (0, 0, "%s: Unknown DWARF-2 DW_FORM_%d", dso->filename,
+	      error (0, 0, "%s: Unknown DWARF DW_FORM_%d", dso->filename,
 		     form);
 	      return NULL;
 	    }
@@ -645,7 +663,7 @@ adjust_attributes (DSO *dso, unsigned char *ptr, struct abbrev_tag *t,
 		      || (t->attr[i].attr >= DW_AT_sf_names
 			  && t->attr[i].attr <= DW_AT_body_end))
 		    break;
-		  error (0, 0, "%s: Unknown DWARF-2 DW_AT_%d with block DW_FORM",
+		  error (0, 0, "%s: Unknown DWARF DW_AT_%d with block DW_FORM",
 			 dso->filename, t->attr[i].attr);
 		  return NULL;
 		}
@@ -688,7 +706,7 @@ adjust_dwarf2_line (DSO *dso, GElf_Addr start, GElf_Addr adjust)
 	}
 
       value = read_16 (ptr);
-      if (value != 2)
+      if (value != 2 && value != 3)
 	{
 	  error (0, 0, "%s: DWARF version %d unhandled", dso->filename,
 		 value);
@@ -836,7 +854,13 @@ adjust_dwarf2_frame (DSO *dso, GElf_Addr start, GElf_Addr adjust)
       if (value == 0xffffffff)
 	{
 	  /* CIE.  */
-	  ptr++;  /* Skip version.  */
+	  uint32_t version = *ptr++;
+	  if (version != 1 && version != 3)
+	    {
+	      error (0, 0, "%s: unhandled .debug_frame version %d",
+		     dso->filename, version);
+	      return 1;
+	    }
 	  if (*ptr != '\0')
 	    {
 	      error (0, 0, "%s: .debug_frame unhandled augmentation \"%s\"",
@@ -846,7 +870,10 @@ adjust_dwarf2_frame (DSO *dso, GElf_Addr start, GElf_Addr adjust)
 	  ptr++;  /* Skip augmentation.  */
 	  read_uleb128 (ptr);  /* Skip code_alignment factor.  */
 	  read_uleb128 (ptr);  /* Skip data_alignment factor.  */
-	  read_uleb128 (ptr);  /* Skip return_address_register.  */
+	  if (version >= 3)
+	    read_uleb128 (ptr);  /* Skip return_address_register.  */
+	  else
+	    ptr++;
 	}
       else
 	{
@@ -881,6 +908,8 @@ adjust_dwarf2_frame (DSO *dso, GElf_Addr start, GElf_Addr adjust)
 	    case DW_CFA_offset_extended_sf:
 	    case DW_CFA_def_cfa_sf:
 	    case DW_CFA_GNU_negative_offset_extended:
+	    case DW_CFA_val_offset:
+	    case DW_CFA_val_offset_sf:
 	      read_uleb128 (ptr);
 	      /* FALLTHROUGH */
 	    case DW_CFA_restore_extended:
@@ -907,6 +936,7 @@ adjust_dwarf2_frame (DSO *dso, GElf_Addr start, GElf_Addr adjust)
 	      ptr += 4;
 	      break;
 	    case DW_CFA_expression:
+	    case DW_CFA_val_expression:
 	      read_uleb128 (ptr);
 	      /* FALLTHROUGH */
 	    case DW_CFA_def_cfa_expression:
@@ -1041,12 +1071,13 @@ adjust_dwarf2 (DSO *dso, int n, GElf_Addr start, GElf_Addr adjust)
 	    }
 
 	  value = read_16 (ptr);
-	  if (value != 2)
+	  if (value != 2 && value != 3)
 	    {
 	      error (0, 0, "%s: DWARF version %d unhandled", dso->filename,
 		     value);
 	      return 1;
 	    }
+	  cu.cu_version = value;
 
 	  value = read_32 (ptr);
 	  if (value >= debug_sections[DEBUG_ABBREV].size)
@@ -1054,7 +1085,7 @@ adjust_dwarf2 (DSO *dso, int n, GElf_Addr start, GElf_Addr adjust)
 	      if (debug_sections[DEBUG_ABBREV].data == NULL)
 		error (0, 0, "%s: .debug_abbrev not present", dso->filename);
 	      else
-		error (0, 0, "%s: DWARF-2 CU abbrev offset too large",
+		error (0, 0, "%s: DWARF CU abbrev offset too large",
 		       dso->filename);
 	      return 1;
 	    }
@@ -1074,14 +1105,14 @@ adjust_dwarf2 (DSO *dso, int n, GElf_Addr start, GElf_Addr adjust)
 		}
 	      else
 		{
-		  error (0, 0, "%s: Invalid DWARF-2 pointer size %d",
+		  error (0, 0, "%s: Invalid DWARF pointer size %d",
 			 dso->filename, ptr_size);
 		  return 1;
 		}
 	    }
 	  else if (read_1 (ptr) != ptr_size)
 	    {
-	      error (0, 0, "%s: DWARF-2 pointer size differs between CUs",
+	      error (0, 0, "%s: DWARF pointer size differs between CUs",
 		     dso->filename);
 	      return 1;
 	    }
@@ -1102,7 +1133,7 @@ adjust_dwarf2 (DSO *dso, int n, GElf_Addr start, GElf_Addr adjust)
 	      t = htab_find_with_hash (abbrev, &tag, tag.entry);
 	      if (t == NULL)
 		{
-		  error (0, 0, "%s: Could not find DWARF-2 abbreviation %d",
+		  error (0, 0, "%s: Could not find DWARF abbreviation %d",
 			 dso->filename, tag.entry);
 		  htab_delete (abbrev);
 		  return 1;
@@ -1138,6 +1169,7 @@ adjust_dwarf2 (DSO *dso, int n, GElf_Addr start, GElf_Addr adjust)
 
   /* .debug_abbrev requires no adjustement.  */
   /* .debug_pubnames requires no adjustement.  */
+  /* .debug_pubtypes requires no adjustement.  */
   /* .debug_macinfo requires no adjustement.  */
   /* .debug_str requires no adjustement.  */
   /* .debug_ranges adjusted for each DW_AT_ranges pointing into it.  */
