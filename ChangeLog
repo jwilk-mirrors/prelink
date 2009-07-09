@@ -1,3 +1,8 @@
+2009-07-09  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/conflict.c (prelink_build_conflicts): Don't call
+	prelink_conflict_rel{,a} on .gnu.conflict section in executables.
+
 2009-06-15  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/prelink.h (R_386_IRELATIVE, R_X86_64_IRELATIVE): Define

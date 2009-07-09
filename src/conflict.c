@@ -565,10 +565,20 @@ prelink_build_conflicts (struct prelink_info *info)
 	  switch (dso->shdr[j].sh_type)
 	    {
 	    case SHT_REL:
+	      if (i == 0
+		  && strcmp (strptr (dso, dso->ehdr.e_shstrndx,
+				     dso->shdr[j].sh_name),
+			     ".gnu.conflict") == 0)
+		break;
 	      if (prelink_conflict_rel (dso, j, info))
 		goto error_out;
 	      break;
 	    case SHT_RELA:
+	      if (i == 0
+		  && strcmp (strptr (dso, dso->ehdr.e_shstrndx,
+				     dso->shdr[j].sh_name),
+			     ".gnu.conflict") == 0)
+		break;
 	      if (prelink_conflict_rela (dso, j, info))
 		goto error_out;
 	      break;
