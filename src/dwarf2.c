@@ -115,7 +115,7 @@ dwarf2_write_le64 (unsigned char *p, GElf_Addr val)
   p[4] = val >> 32;
   p[5] = val >> 40;
   p[6] = val >> 48;
-  p[7] = val >> 58;
+  p[7] = val >> 56;
 }
 
 static void
@@ -139,7 +139,7 @@ dwarf2_write_be64 (unsigned char *p, GElf_Addr val)
   p[3] = val >> 32;
   p[2] = val >> 40;
   p[1] = val >> 48;
-  p[0] = val >> 58;
+  p[0] = val >> 56;
 }
 
 static struct

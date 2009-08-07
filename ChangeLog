@@ -1,3 +1,8 @@
+2009-08-06  Joseph Myers  <joseph@codesourcery.com>
+
+	* src/dwarf2.c (dwarf2_write_le64, dwarf2_write_be64): Shift by 56
+	not 58 for MSB.
+
 2009-07-09  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/conflict.c (prelink_build_conflicts): Don't call
