@@ -392,6 +392,7 @@ adjust_location_list (DSO *dso, unsigned char *ptr, size_t len,
 	    uint32_t len = read_uleb128 (ptr);
 	    ptr += len;
 	  }
+	  break;
 	default:
 	  error (0, 0, "%s: Unknown DWARF DW_OP_%d", dso->filename, op);
 	  return 1;
