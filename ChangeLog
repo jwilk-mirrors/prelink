@@ -1,5 +1,9 @@
 2009-10-19  Joseph Myers  <joseph@codesourcery.com>
 
+	* src/conflict.c (prelink_build_conflicts): Use >= not > to
+	determine whether a relocation points outside the first bss
+	section.
+
 	* m4/libelf.m4: Resync with version of code in aclocal.m4.
 
 2009-09-25  Jakub Jelinek  <jakub@redhat.com>

@@ -660,7 +660,7 @@ prelink_build_conflicts (struct prelink_info *info)
 	{
 	  for (i = 1; i < cr.count; ++i)
 	    if (cr.rela[i].r_offset
-		> dso->shdr[bss1].sh_addr + dso->shdr[bss1].sh_size)
+		>= dso->shdr[bss1].sh_addr + dso->shdr[bss1].sh_size)
 	      break;
 	  if (cr.rela[i].r_offset < dso->shdr[bss2].sh_addr)
 	    {
