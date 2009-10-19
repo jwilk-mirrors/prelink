@@ -73,7 +73,8 @@ int main (void)
   Elf64_Addr val;
   Elf_Scn *scn;
 
-  fd = open ("conflibelftest", O_RDWR | O_CREAT | O_EXCL); if (fd == -1) exit (1);
+  fd = open ("conflibelftest", O_RDWR | O_CREAT | O_EXCL, 0600);
+  if (fd == -1) exit (1);
   unlink ("conflibelftest");
   if (write (fd, sparc64_elf, sizeof(sparc64_elf)) != sizeof(sparc64_elf))
     exit (1);
