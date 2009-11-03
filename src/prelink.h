@@ -93,6 +93,15 @@
 #define R_X86_64_IRELATIVE	37
 #endif
 
+#ifndef R_PPC_IRELATIVE
+#define R_PPC_IRELATIVE		248
+#endif
+
+#ifndef R_PPC64_JMP_IREL
+#define R_PPC64_JMP_IREL	247
+#define R_PPC64_IRELATIVE	248
+#endif
+
 struct prelink_entry;
 struct prelink_info;
 struct PLArch;

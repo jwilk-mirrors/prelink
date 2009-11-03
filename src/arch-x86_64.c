@@ -501,6 +501,7 @@ x86_64_reloc_size (int reloc_type)
     case R_X86_64_GLOB_DAT:
     case R_X86_64_JUMP_SLOT:
     case R_X86_64_64:
+    case R_X86_64_IRELATIVE:
       return 8;
     default:
       return 4;

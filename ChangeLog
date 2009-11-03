@@ -1,3 +1,27 @@
+2009-11-03  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/arch-x86_64.c (x86_64_reloc_size): Handle R_X86_64_IRELATIVE.
+
+	* src/prelink.h (R_PPC_IRELATIVE, R_PPC64_IRELATIVE,
+	R_PPC64_JMP_IREL): Define if not defined.
+	* src/undo.c (undo_sections, prelink_undo): Allow .iplt section to
+	change from SHT_NOBITS to SHT_PROGBITS.
+	* src/arch-ppc.c (ppc_adjust_rela, ppc_prelink_rela,
+	ppc_apply_conflict_rela, ppc_undo_prelink_rela): Handle
+	R_PPC_IRELATIVE.
+	(ppc_prelink_conflict_rela): Handle R_PPC_IRELATIVE and
+	conflict->ifunc conflicts.
+	* src/arch-ppc64.c (ppc64_adjust_rela, ppc64_prelink_rela,
+	ppc64_undo_prelink_rela): Handle R_PPC64_IRELATIVE and
+	R_PPC64_JMP_IREL.
+	(ppc64_apply_conflict_rela, ppc64_reloc_size): Handle
+	R_PPC64_IRELATIVE.
+	(ppc64_prelink_conflict_rela): Handle R_PPC64_IRELATIVE,
+	R_PPC64_JMP_IREL and conflict->ifunc conflicts.
+	* testsuite/ifunc.h (IFUNC_ASM): Add powerpc definition.
+	(IFUNC_DECL): Define.
+	(IFUNC): Use IFUNC_DECL.
+
 2009-10-19  Joseph Myers  <joseph@codesourcery.com>
 
 	* src/conflict.c (prelink_build_conflicts): Use >= not > to

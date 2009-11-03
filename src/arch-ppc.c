@@ -126,7 +126,8 @@ static int
 ppc_adjust_rela (DSO *dso, GElf_Rela *rela, GElf_Addr start,
 		 GElf_Addr adjust)
 {
-  if (GELF_R_TYPE (rela->r_info) == R_PPC_RELATIVE)
+  if (GELF_R_TYPE (rela->r_info) == R_PPC_RELATIVE
+      || GELF_R_TYPE (rela->r_info) == R_PPC_IRELATIVE)
     {
       if ((Elf32_Word) rela->r_addend >= start)
 	rela->r_addend += (Elf32_Sword) adjust;
@@ -206,7 +207,8 @@ ppc_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
   DSO *dso = info->dso;
   GElf_Addr value;
 
-  if (GELF_R_TYPE (rela->r_info) == R_PPC_NONE)
+  if (GELF_R_TYPE (rela->r_info) == R_PPC_NONE
+      || GELF_R_TYPE (rela->r_info) == R_PPC_IRELATIVE)
     return 0;
   else if (GELF_R_TYPE (rela->r_info) == R_PPC_RELATIVE)
     {
@@ -332,6 +334,7 @@ static int
 ppc_apply_conflict_rela (struct prelink_info *info, GElf_Rela *rela,
 			 char *buf, GElf_Addr dest_addr)
 {
+  GElf_Rela *ret;
   switch (GELF_R_TYPE (rela->r_info))
     {
     case R_PPC_ADDR32:
@@ -341,6 +344,16 @@ ppc_apply_conflict_rela (struct prelink_info *info, GElf_Rela *rela,
     case R_PPC_ADDR16:
     case R_PPC_UADDR16:
       buf_write_be16 (buf, rela->r_addend);
+      break;
+    case R_PPC_IRELATIVE:
+      if (dest_addr == 0)
+	return 5;
+      ret = prelink_conflict_add_rela (info);
+      if (ret == NULL)
+	return 1;
+      ret->r_offset = dest_addr;
+      ret->r_info = GELF_R_INFO (0, R_PPC_IRELATIVE);
+      ret->r_addend = rela->r_addend;
       break;
     default:
       abort ();
@@ -435,16 +448,13 @@ ppc_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
   int r_type;
 
   if (GELF_R_TYPE (rela->r_info) == R_PPC_RELATIVE
-      || GELF_R_TYPE (rela->r_info) == R_PPC_NONE
-      || info->dso == dso)
+      || GELF_R_TYPE (rela->r_info) == R_PPC_NONE)
     /* Fast path: nothing to do.  */
     return 0;
   conflict = prelink_conflict (info, GELF_R_SYM (rela->r_info),
 			       GELF_R_TYPE (rela->r_info));
   if (conflict == NULL)
     {
-      if (info->curtls == NULL)
-	return 0;
       switch (GELF_R_TYPE (rela->r_info))
 	{
 	/* Even local DTPMOD and TPREL relocs need conflicts.  */
@@ -454,18 +464,19 @@ ppc_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
 	case R_PPC_TPREL16_LO:
 	case R_PPC_TPREL16_HI:
 	case R_PPC_TPREL16_HA:
+	  if (info->curtls == NULL || info->dso == dso)
+	    return 0;
+	  break;
+	/* Similarly IRELATIVE relocations always need conflicts.  */
+	case R_PPC_IRELATIVE:
 	  break;
 	default:
 	  return 0;
 	}
       value = 0;
     }
-  else if (conflict->ifunc)
-    {
-      error (0, 0, "%s: STT_GNU_IFUNC not handled on PowerPC yet",
-	     dso->filename);
-      return 1;
-    }
+  else if (info->dso == dso && !conflict->ifunc)
+    return 0;
   else
     {
       /* DTPREL wants to see only real conflicts, not lookups
@@ -494,13 +505,19 @@ ppc_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
     {
     case R_PPC_GLOB_DAT:
       r_type = R_PPC_ADDR32;
-      break;
     case R_PPC_ADDR32:
     case R_PPC_UADDR32:
+    case R_PPC_IRELATIVE:
+      if (conflict != NULL && conflict->ifunc)
+	r_type = R_PPC_IRELATIVE;
       break;
     case R_PPC_JMP_SLOT:
       if (dynamic_info_is_set (dso, DT_PPC_GOT_BIT))
-	r_type = R_PPC_ADDR32;
+	{
+	  r_type = R_PPC_ADDR32;
+	  if (conflict != NULL && conflict->ifunc)
+	    r_type = R_PPC_IRELATIVE;
+	}
       break;
     case R_PPC_ADDR16_HA:
       value += 0x8000;
@@ -604,6 +621,12 @@ ppc_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
     default:
       error (0, 0, "%s: Unknown PowerPC relocation type %d", dso->filename,
 	     r_type);
+      return 1;
+    }
+  if (conflict != NULL && conflict->ifunc && r_type != R_PPC_IRELATIVE)
+    {
+      error (0, 0, "%s: relocation %d against IFUNC symbol", dso->filename,
+	     (int) GELF_R_TYPE (rela->r_info));
       return 1;
     }
   ret->r_info = GELF_R_INFO (0, r_type);
@@ -776,6 +799,9 @@ ppc_undo_prelink_rela (DSO *dso, GElf_Rela *rela, GElf_Addr relaaddr)
       /* .plt section will become SHT_NOBITS if DT_PPC_GOT is not present,
 	 otherwise .plt section will be unprelinked in
 	 ppc_arch_undo_prelink.  */
+      return 0;
+    case R_PPC_IRELATIVE:
+      /* .iplt section will become SHT_NOBITS.  */
       return 0;
     case R_PPC_ADDR16:
     case R_PPC_UADDR16:

@@ -406,7 +406,7 @@ undo_sections (DSO *dso, int undo, struct section_move *move,
 
 	if (! strcmp (name, ".bss")
 	    || ! strcmp (name, ".sbss")
-	    || (! strcmp (name, ".plt")
+	    || ((! strcmp (name, ".plt") || ! strcmp (name, ".iplt"))
 		&& dso->shdr[i].sh_type == SHT_PROGBITS))
 	  {
 	    int is_plt = ! strcmp (name, ".plt");
@@ -621,7 +621,8 @@ prelink_undo (DSO *dso)
 	    {
 	      assert (strcmp (name, ".bss") == 0
 		      || strcmp (name, ".sbss") == 0
-		      || strcmp (name, ".plt") == 0);
+		      || strcmp (name, ".plt") == 0
+		      || strcmp (name, ".iplt") == 0);
 	      scn = dso->scn[i];
 	      d = elf_getdata (scn, NULL);
 	      assert (d != NULL && elf_getdata (scn, d) == NULL);

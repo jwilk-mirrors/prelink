@@ -83,12 +83,18 @@ static int
 ppc64_adjust_rela (DSO *dso, GElf_Rela *rela, GElf_Addr start,
 		   GElf_Addr adjust)
 {
-  if (GELF_R_TYPE (rela->r_info) == R_PPC64_RELATIVE)
+  if (GELF_R_TYPE (rela->r_info) == R_PPC64_RELATIVE
+      || GELF_R_TYPE (rela->r_info) == R_PPC64_IRELATIVE)
     {
       GElf_Addr val = read_ube64 (dso, rela->r_offset);
 
       if (val == rela->r_addend && val >= start)
 	write_be64 (dso, rela->r_offset, val + adjust);
+      if (rela->r_addend >= start)
+	rela->r_addend += adjust;
+    }
+  else if (GELF_R_TYPE (rela->r_info) == R_PPC64_JMP_IREL)
+    {
       if (rela->r_addend >= start)
 	rela->r_addend += adjust;
     }
@@ -162,7 +168,9 @@ ppc64_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
   DSO *dso = info->dso;
   GElf_Addr value;
 
-  if (GELF_R_TYPE (rela->r_info) == R_PPC64_NONE)
+  if (GELF_R_TYPE (rela->r_info) == R_PPC64_NONE
+      || GELF_R_TYPE (rela->r_info) == R_PPC64_IRELATIVE
+      || GELF_R_TYPE (rela->r_info) == R_PPC64_JMP_IREL)
     return 0;
   else if (GELF_R_TYPE (rela->r_info) == R_PPC64_RELATIVE)
     {
@@ -308,6 +316,7 @@ static int
 ppc64_apply_conflict_rela (struct prelink_info *info, GElf_Rela *rela,
 			   char *buf, GElf_Addr dest_addr)
 {
+  GElf_Rela *ret;
   switch (GELF_R_TYPE (rela->r_info))
     {
     case R_PPC64_ADDR64:
@@ -321,6 +330,16 @@ ppc64_apply_conflict_rela (struct prelink_info *info, GElf_Rela *rela,
     case R_PPC64_ADDR16:
     case R_PPC64_UADDR16:
       buf_write_be16 (buf, rela->r_addend);
+      break;
+    case R_PPC64_IRELATIVE:
+      if (dest_addr == 0)
+	return 5;
+      ret = prelink_conflict_add_rela (info);
+      if (ret == NULL)
+	return 1;
+      ret->r_offset = dest_addr;
+      ret->r_info = GELF_R_INFO (0, R_PPC64_IRELATIVE);
+      ret->r_addend = rela->r_addend;
       break;
     default:
       abort ();
@@ -439,16 +458,13 @@ ppc64_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
   int r_type;
 
   if (GELF_R_TYPE (rela->r_info) == R_PPC64_RELATIVE
-      || GELF_R_TYPE (rela->r_info) == R_PPC64_NONE
-      || info->dso == dso)
+      || GELF_R_TYPE (rela->r_info) == R_PPC64_NONE)
     /* Fast path: nothing to do.  */
     return 0;
   conflict = prelink_conflict (info, GELF_R_SYM (rela->r_info),
 			       GELF_R_TYPE (rela->r_info));
   if (conflict == NULL)
     {
-      if (info->curtls == NULL)
-	return 0;
       switch (GELF_R_TYPE (rela->r_info))
 	{
 	/* Even local DTPMOD and TPREL relocs need conflicts.  */
@@ -458,18 +474,20 @@ ppc64_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
 	case R_PPC64_TPREL16_LO:
 	case R_PPC64_TPREL16_HI:
 	case R_PPC64_TPREL16_HA:
+	  if (info->curtls == NULL || info->dso == dso)
+	    return 0;
+	  break;
+	/* Similarly IRELATIVE relocations always need conflicts.  */
+	case R_PPC64_IRELATIVE:
+	case R_PPC64_JMP_IREL:
 	  break;
 	default:
 	  return 0;
 	}
       value = 0;
     }
-  else if (conflict->ifunc)
-    {
-      error (0, 0, "%s: STT_GNU_IFUNC not handled on PowerPC64 yet",
-	     dso->filename);
-      return 1;
-    }
+  else if (info->dso == dso && !conflict->ifunc)
+    return 0;
   else
     {
       /* DTPREL wants to see only real conflicts, not lookups
@@ -498,10 +516,17 @@ ppc64_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
     {
     case R_PPC64_GLOB_DAT:
       r_type = R_PPC64_ADDR64;
-      break;
     case R_PPC64_ADDR64:
     case R_PPC64_UADDR64:
+      if (conflict != NULL && conflict->ifunc)
+	r_type = R_PPC64_IRELATIVE;
+      break;
+    case R_PPC64_IRELATIVE:
+    case R_PPC64_JMP_IREL:
+      break;
     case R_PPC64_JMP_SLOT:
+      if (conflict != NULL && conflict->ifunc)
+	r_type = R_PPC64_JMP_IREL;
       break;
     case R_PPC64_ADDR32:
     case R_PPC64_UADDR32:
@@ -640,6 +665,13 @@ ppc64_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
 	     r_type);
       return 1;
     }
+  if (conflict != NULL && conflict->ifunc
+      && r_type != R_PPC64_IRELATIVE && r_type != R_PPC64_JMP_IREL)
+    {
+      error (0, 0, "%s: relocation %d against IFUNC symbol", dso->filename,
+	     (int) GELF_R_TYPE (rela->r_info));
+      return 1;
+    }
   ret->r_info = GELF_R_INFO (0, r_type);
   ret->r_addend = value;
   return 0;
@@ -668,8 +700,12 @@ ppc64_undo_prelink_rela (DSO *dso, GElf_Rela *rela, GElf_Addr relaaddr)
     case R_PPC64_JMP_SLOT:
       /* .plt section will become SHT_NOBITS.  */
       return 0;
+    case R_PPC64_JMP_IREL:
+      /* .iplt section will become SHT_NOBITS.  */
+      return 0;
     case R_PPC64_RELATIVE:
     case R_PPC64_ADDR64:
+    case R_PPC64_IRELATIVE:
       write_be64 (dso, rela->r_offset, rela->r_addend);
       break;
     case R_PPC64_GLOB_DAT:
@@ -766,6 +802,7 @@ ppc64_reloc_size (int reloc_type)
     case R_PPC64_DTPMOD64:
     case R_PPC64_DTPREL64:
     case R_PPC64_TPREL64:
+    case R_PPC64_IRELATIVE:
       return 8;
     default:
       break;
