@@ -1,7 +1,12 @@
 #!/bin/bash
 . `dirname $0`/functions.sh
 # Disable this test under SELinux
-test -x /usr/sbin/getenforce -a "`/usr/sbin/getenforce`" = Enforcing && exit 77
+if test -x /usr/sbin/getenforce; then
+  case "`/usr/sbin/getenforce 2>/dev/null`" in
+    Permissive|Disabled) ;;
+    *) exit 77 ;;
+  esac
+fi
 rm -f reloc8 reloc8lib*.so reloc8.log
 rm -f prelink.cache
 NOCOPYRELOC=-Wl,-z,nocopyreloc
