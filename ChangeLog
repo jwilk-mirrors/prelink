@@ -1,3 +1,10 @@
+2010-01-05  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/arch-s390.c (s390_prelink_rela, s390_apply_rela,
+	s390_prelink_conflict_rela, s390_prelink_conflict_rela,
+	s390_undo_prelink_rela, s390_reloc_size): Handle
+	R_390_{PC32DBL,16,PC16,PC16DBL,8} relocs.
+
 2009-12-16  Jakub Jelinek  <jakub@redhat.com>
 
 	* testsuite/reloc2.sh: Don't assume textrel works if getenforce

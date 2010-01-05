@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2009 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2009, 2010 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -122,20 +122,40 @@ s390_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
     }
   value = info->resolve (info, GELF_R_SYM (rela->r_info),
 			 GELF_R_TYPE (rela->r_info));
+  value += rela->r_addend;
   switch (GELF_R_TYPE (rela->r_info))
     {
     case R_390_GLOB_DAT:
     case R_390_JMP_SLOT:
-      write_be32 (dso, rela->r_offset, value);
+      write_be32 (dso, rela->r_offset, value - rela->r_addend);
       break;
     case R_390_32:
-      write_be32 (dso, rela->r_offset, value + rela->r_addend);
+      write_be32 (dso, rela->r_offset, value);
       break;
     case R_390_PC32:
-      write_be32 (dso, rela->r_offset, value + rela->r_addend - rela->r_offset);
+      write_be32 (dso, rela->r_offset, value - rela->r_offset);
+      break;
+    case R_390_PC32DBL:
+    case R_390_PLT32DBL:
+      write_be32 (dso, rela->r_offset,
+		  ((Elf32_Sword) (value - rela->r_offset)) >> 1);
+      break;
+    case R_390_16:
+      write_be16 (dso, rela->r_offset, value);
+      break;
+    case R_390_PC16:
+      write_be16 (dso, rela->r_offset, value - rela->r_offset);
+      break;
+    case R_390_PC16DBL:
+    case R_390_PLT16DBL:
+      write_be16 (dso, rela->r_offset,
+		  ((int16_t) (value - rela->r_offset)) >> 1);
+      break;
+    case R_390_8:
+      write_8 (dso, rela->r_offset, value);
       break;
     case R_390_TLS_DTPOFF:
-      write_be32 (dso, rela->r_offset, value + rela->r_addend);
+      write_be32 (dso, rela->r_offset, value);
       break;
     /* DTPMOD and TPOFF is impossible to predict in shared libraries
        unless prelink sets the rules.  */
@@ -150,7 +170,7 @@ s390_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
     case R_390_TLS_TPOFF:
       if (dso->ehdr.e_type == ET_EXEC && info->resolvetls)
 	write_be32 (dso, rela->r_offset,
-		    value + rela->r_addend - info->resolvetls->offset);
+		    value - info->resolvetls->offset);
       break;
     case R_390_COPY:
       if (dso->ehdr.e_type == ET_EXEC)
@@ -175,6 +195,12 @@ s390_apply_conflict_rela (struct prelink_info *info, GElf_Rela *rela,
     case R_390_32:
       buf_write_be32 (buf, rela->r_addend);
       break;
+    case R_390_16:
+      buf_write_be16 (buf, rela->r_addend);
+      break;
+    case R_390_8:
+      buf_write_8 (buf, rela->r_addend);
+      break;
     default:
       abort ();
     }
@@ -195,19 +221,37 @@ s390_apply_rela (struct prelink_info *info, GElf_Rela *rela, char *buf)
 
   value = info->resolve (info, GELF_R_SYM (rela->r_info),
 			 GELF_R_TYPE (rela->r_info));
+  value += rela->r_addend;
   switch (GELF_R_TYPE (rela->r_info))
     {
     case R_390_NONE:
       break;
     case R_390_GLOB_DAT:
     case R_390_JMP_SLOT:
-      buf_write_be32 (buf, value);
+      buf_write_be32 (buf, value - rela->r_addend);
       break;
     case R_390_32:
-      buf_write_be32 (buf, value + rela->r_addend);
+      buf_write_be32 (buf, value);
       break;
     case R_390_PC32:
-      buf_write_be32 (buf, value + rela->r_addend - rela->r_offset);
+      buf_write_be32 (buf, value - rela->r_offset);
+      break;
+    case R_390_PC32DBL:
+    case R_390_PLT32DBL:
+      buf_write_be32 (buf, ((Elf32_Sword) (value - rela->r_offset)) >> 1);
+      break;
+    case R_390_16:
+      buf_write_be16 (buf, value);
+      break;
+    case R_390_PC16:
+      buf_write_be16 (buf, value - rela->r_offset);
+      break;
+    case R_390_PC16DBL:
+    case R_390_PLT16DBL:
+      buf_write_be16 (buf, ((int16_t) (value - rela->r_offset)) >> 1);
+      break;
+    case R_390_8:
+      buf_write_8 (buf, value);
       break;
     case R_390_COPY:
       abort ();
@@ -281,17 +325,38 @@ s390_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
     return 1;
   ret->r_offset = rela->r_offset;
   ret->r_info = GELF_R_INFO (0, R_390_32);
+  value += rela->r_addend;
   switch (GELF_R_TYPE (rela->r_info))
     {
     case R_390_GLOB_DAT:
     case R_390_JMP_SLOT:
-      ret->r_addend = (Elf32_Sword) value;
+      ret->r_addend = (Elf32_Sword) (value - rela->r_addend);
       break;
     case R_390_32:
-      ret->r_addend = (Elf32_Sword) (value + rela->r_addend);
+      ret->r_addend = (Elf32_Sword) value;
       break;
     case R_390_PC32:
-      ret->r_addend = (Elf32_Sword) (value + rela->r_addend - rela->r_offset);
+      ret->r_addend = (Elf32_Sword) (value - rela->r_offset);
+      break;
+    case R_390_PC32DBL:
+    case R_390_PLT32DBL:
+      ret->r_addend
+	= (Elf32_Addr) (((Elf32_Sword) (value - rela->r_offset)) >> 1);
+      break;
+    case R_390_PC16:
+      value -= rela->r_offset;
+    case R_390_16:
+      ret->r_addend = (Elf32_Half) value;
+      ret->r_info = GELF_R_INFO (0, R_390_16);
+      break;
+    case R_390_PC16DBL:
+    case R_390_PLT16DBL:
+      ret->r_addend = (Elf32_Half) (((int16_t) (value - rela->r_offset)) >> 1);
+      ret->r_info = GELF_R_INFO (0, R_390_16);
+      break;
+    case R_390_8:
+      ret->r_addend = value & 0xff;
+      ret->r_info = GELF_R_INFO (0, R_390_8);
       break;
     case R_390_COPY:
       error (0, 0, "R_390_COPY should not be present in shared libraries");
@@ -314,10 +379,10 @@ s390_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
 	  ret->r_addend = tls->modid;
 	  break;
 	case R_390_TLS_DTPOFF:
-	  ret->r_addend = value + rela->r_addend;
+	  ret->r_addend = value;
 	  break;
 	case R_390_TLS_TPOFF:
-	  ret->r_addend = value + rela->r_addend - tls->offset;
+	  ret->r_addend = value - tls->offset;
 	  break;
 	}
       break;
@@ -441,10 +506,21 @@ s390_undo_prelink_rela (DSO *dso, GElf_Rela *rela, GElf_Addr relaaddr)
     case R_390_GLOB_DAT:
     case R_390_32:
     case R_390_PC32:
+    case R_390_PC32DBL:
+    case R_390_PLT32DBL:
     case R_390_TLS_DTPMOD:
     case R_390_TLS_DTPOFF:
     case R_390_TLS_TPOFF:
       write_be32 (dso, rela->r_offset, 0);
+      break;
+    case R_390_16:
+    case R_390_PC16:
+    case R_390_PC16DBL:
+    case R_390_PLT16DBL:
+      write_be16 (dso, rela->r_offset, 0);
+      break;
+    case R_390_8:
+      write_8 (dso, rela->r_offset, 0);
       break;
     case R_390_COPY:
       if (dso->ehdr.e_type == ET_EXEC)
@@ -463,7 +539,18 @@ s390_undo_prelink_rela (DSO *dso, GElf_Rela *rela, GElf_Addr relaaddr)
 static int
 s390_reloc_size (int reloc_type)
 {
-  return 4;
+  switch (reloc_type)
+    {
+    case R_390_16:
+    case R_390_PC16:
+    case R_390_PC16DBL:
+    case R_390_PLT16DBL:
+      return 2;
+    case R_390_8:
+      return 1;  
+    default:
+      return 4;
+    }
 }
 
 static int
