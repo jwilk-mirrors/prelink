@@ -340,8 +340,7 @@ s390_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
       break;
     case R_390_PC32DBL:
     case R_390_PLT32DBL:
-      ret->r_addend
-	= (Elf32_Addr) (((Elf32_Sword) (value - rela->r_offset)) >> 1);
+      ret->r_addend = ((Elf32_Sword) (value - rela->r_offset)) >> 1;
       break;
     case R_390_PC16:
       value -= rela->r_offset;

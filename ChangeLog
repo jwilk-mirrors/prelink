@@ -1,3 +1,9 @@
+2010-01-06  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/arch-s390.c (s390_prelink_conflict_rela) <case R_390_PC32DBL>:
+	Ensure negative addends are sign-extended to 64-bits, instead of
+	zero-extended.
+
 2010-01-05  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/arch-s390.c (s390_prelink_rela, s390_apply_rela,
