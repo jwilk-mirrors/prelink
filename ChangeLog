@@ -1,5 +1,9 @@
 2010-04-13  Jakub Jelinek  <jakub@redhat.com>
 
+	* testsuite/reloc8.sh: Don't use -Wl,-z,nocopyreloc on
+	sparc64.
+	* testsuite/reloc9.sh: Likewise.
+
 	* src/dwarf2.c (DEBUG_TYPES): Define.
 	(debug_sections): Add .debug_types entry.
 	(read_abbrev): Handle new DWARF4 forms.
