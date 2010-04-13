@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2009 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2009, 2010 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -73,6 +73,9 @@
 #define DW_TAG_imported_unit		0x3d
 #define DW_TAG_condition		0x3f
 #define DW_TAG_shared_type		0x40
+#define DW_TAG_type_unit		0x41
+#define DW_TAG_rvalue_reference_type	0x42
+#define DW_TAG_template_alias		0x43
 #define DW_TAG_MIPS_loop		0x4081
 #define DW_TAG_format_label		0x4101
 #define DW_TAG_function_template	0x4102
@@ -106,6 +109,10 @@
 #define DW_FORM_ref8			0x14
 #define DW_FORM_ref_udata		0x15
 #define DW_FORM_indirect		0x16
+#define DW_FORM_sec_offset		0x17
+#define DW_FORM_exprloc			0x18
+#define DW_FORM_flag_present		0x19
+#define DW_FORM_ref_sig8		0x20
 
 #define DW_AT_sibling			0x01
 #define DW_AT_location			0x02
@@ -139,6 +146,7 @@
 #define DW_AT_return_addr		0x2a
 #define DW_AT_start_scope		0x2c
 #define DW_AT_stride_size		0x2e
+#define DW_AT_bit_stride		0x2e
 #define DW_AT_upper_bound		0x2f
 #define DW_AT_abstract_origin		0x31
 #define DW_AT_accessibility		0x32
@@ -173,6 +181,7 @@
 #define DW_AT_associated		0x4f
 #define DW_AT_data_location		0x50
 #define DW_AT_stride			0x51
+#define DW_AT_byte_stride		0x51
 #define DW_AT_entry_pc			0x52
 #define DW_AT_use_UTF8			0x53
 #define DW_AT_extension			0x54
@@ -181,6 +190,27 @@
 #define DW_AT_call_column		0x57
 #define DW_AT_call_file			0x58
 #define DW_AT_call_line			0x59
+#define DW_AT_description		0x5a
+#define DW_AT_binary_scale		0x5b
+#define DW_AT_decimal_scale		0x5c
+#define DW_AT_small			0x5d
+#define DW_AT_decimal_sign		0x5e
+#define DW_AT_digit_count		0x5f
+#define DW_AT_picture_string		0x60
+#define DW_AT_mutable			0x61
+#define DW_AT_threads_scaled		0x62
+#define DW_AT_explicit			0x63
+#define DW_AT_object_pointer		0x64
+#define DW_AT_endianity			0x65
+#define DW_AT_elemental			0x66
+#define DW_AT_pure			0x67
+#define DW_AT_recursive			0x68
+#define DW_AT_signature			0x69
+#define DW_AT_main_subprogram		0x6a
+#define DW_AT_data_bit_offset		0x6b
+#define DW_AT_const_expr		0x6c
+#define DW_AT_enum_class		0x6d
+#define DW_AT_linkage_name		0x6e
 #define DW_AT_MIPS_fde			0x2001
 #define DW_AT_MIPS_loop_begin		0x2002
 #define DW_AT_MIPS_tail_loop_begin	0x2003
@@ -424,10 +454,14 @@
 #define DW_LNS_set_basic_block		0x7
 #define DW_LNS_const_add_pc		0x8
 #define DW_LNS_fixed_advance_pc		0x9
+#define DW_LNS_set_prologue_end		0xa
+#define DW_LNS_set_epilogue_begin	0xb
+#define DW_LNS_set_isa			0xc
 
 #define DW_LNE_end_sequence		0x1
 #define DW_LNE_set_address		0x2
 #define DW_LNE_define_file		0x3
+#define DW_LNE_set_discriminator	0x4
 
 #define DW_CFA_advance_loc		0x40
 #define DW_CFA_offset			0x80
@@ -491,6 +525,7 @@
 #define DW_LANG_ObjC_plus_plus		0x0011
 #define DW_LANG_UPC			0x0012
 #define DW_LANG_D			0x0013
+#define DW_LANG_Python			0x0014
 #define DW_LANG_Mips_Assembler		0x8001
 #define DW_LANG_lo_user			0x8000
 #define DW_LANG_hi_user			0xffff
