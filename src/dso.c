@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2010 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -1694,8 +1694,9 @@ write_dso (DSO *dso)
   return 0;
 }
 
-int
-set_security_context (DSO *dso, const char *temp_name, const char *name)
+static int
+set_security_context (const char *temp_name, const char *name,
+		      int ignore_errors)
 {
 #ifdef USE_SELINUX
   static int selinux_enabled = -1;
@@ -1716,7 +1717,7 @@ set_security_context (DSO *dso, const char *temp_name, const char *name)
 		 name);
 	  return 1;
 	}
-      if (setfilecon (temp_name, scontext) < 0)
+      if (setfilecon (temp_name, scontext) < 0 && !ignore_errors)
 	{
 	  error (0, errno, "Could not set security context for %s",
 		 name);
@@ -1739,6 +1740,7 @@ update_dso (DSO *dso, const char *orig_name)
       char *name1, *name2;
       struct utimbuf u;
       struct stat64 st;
+      int fdin, fdout;
 
       switch (write_dso (dso))
 	{
@@ -1761,30 +1763,80 @@ update_dso (DSO *dso, const char *orig_name)
 	  close_dso (dso);
 	  return 1;
 	}
-      if (fchown (dso->fd, st.st_uid, st.st_gid) < 0
-	  || fchmod (dso->fd, st.st_mode & 07777) < 0)
+      if ((fchown (dso->fd, st.st_uid, st.st_gid) < 0
+	   || fchmod (dso->fd, st.st_mode & 07777) < 0)
+	  && orig_name == NULL)
 	{
 	  error (0, errno, "Could not set %s owner or mode", dso->filename);
 	  close_dso (dso);
 	  return 1;
 	}
+      if (orig_name != NULL)
+	fdin = dup (dso->fd);
+      else
+	fdin = -1;
       close_dso_1 (dso);
       u.actime = time (NULL);
       u.modtime = st.st_mtime;
       utime (name2, &u);
 
-      if (set_security_context (dso, name2, orig_name ? orig_name : name1))
+      if (set_security_context (name2, orig_name ? orig_name : name1,
+				orig_name != NULL))
 	{
+	  if (fdin != -1)
+	    close (fdin);
 	  unlink (name2);
 	  return 1;
 	}
 
-      if (rename (name2, name1))
+      if ((orig_name != NULL && strcmp (name1, "-") == 0)
+	  || rename (name2, name1))
 	{
+	  if (fdin != -1)
+	    {
+	      struct stat64 stt;
+	      off_t off = 0;
+	      int err;
+	      if (strcmp (name1, "-") == 0)
+		fdout = 1;
+	      else
+		fdout = open (name1, O_WRONLY | O_CREAT, 0600);
+	      if (fdout != -1
+		  && fstat64 (fdin, &stt) >= 0
+		  && send_file (fdout, fdin, &off, stt.st_size) == stt.st_size)
+		{
+		  close (fdin);
+		  if (fchown (fdout, st.st_uid, st.st_gid) >= 0)
+		    fchmod (fdout, st.st_mode & 07777);
+		  if (strcmp (name1, "-") != 0)
+		    {
+		      set_security_context (name1, name1, 1);
+		      utime (name1, &u);
+		      close (fdout);
+		    }
+		  unlink (name2);
+		  return 0;
+		}
+	      else if (fdout != -1)
+		{
+		  err = errno;
+		  if (strcmp (name1, "-") == 0)
+		    close (fdout);
+		}
+	      else
+		err = errno;
+	      close (fdin);
+	      unlink (name2);
+	      error (0, err, "Could not rename nor copy temporary to %s",
+		     name1);
+	      return 1;
+	    }
 	  unlink (name2);
 	  error (0, errno, "Could not rename temporary to %s", name1);
 	  return 1;
 	}
+      if (fdin != -1)
+	close (fdin);
     }
   else
     close_dso_1 (dso);

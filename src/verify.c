@@ -1,4 +1,4 @@
-/* Copyright (C) 2002, 2003, 2006, 2007 Red Hat, Inc.
+/* Copyright (C) 2002, 2003, 2006, 2007, 2010 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2002.
 
    This program is free software; you can redistribute it and/or modify
@@ -30,7 +30,7 @@
 #include "md5.h"
 #include "sha.h"
 
-static ssize_t
+ssize_t
 send_file (int outfd, int infd, off_t *poff, size_t count)
 {
   char buf[65536], *b, *p, *q;
@@ -45,7 +45,7 @@ send_file (int outfd, int infd, off_t *poff, size_t count)
       while (p != q)
 	{
 	  n = TEMP_FAILURE_RETRY (write (outfd, p, q - p));
-	  if (n < 0)
+	  if (n <= 0)
 	    {
 	      munmap (b, count);
 	      return -1;
@@ -66,7 +66,7 @@ send_file (int outfd, int infd, off_t *poff, size_t count)
       while (p != q)
 	{
 	  n = TEMP_FAILURE_RETRY (read (infd, p, q - p));
-	  if (n < 0)
+	  if (n <= 0)
 	    return -1;
 	  p += n;
 	}
@@ -74,7 +74,7 @@ send_file (int outfd, int infd, off_t *poff, size_t count)
       while (p != q)
 	{
 	  n = TEMP_FAILURE_RETRY (write (outfd, p, q - p));
-	  if (n < 0)
+	  if (n <= 0)
 	    return -1;
 	  p += n;
 	}

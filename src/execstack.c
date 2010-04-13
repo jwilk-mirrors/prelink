@@ -1,4 +1,4 @@
-/* Copyright (C) 2003, 2005 Red Hat, Inc.
+/* Copyright (C) 2003, 2005, 2010 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2003.
 
    This program is free software; you can redistribute it and/or modify
@@ -450,6 +450,12 @@ prelink_conflict (struct prelink_info *info, GElf_Word r_sym, int reloc_type)
 
 GElf_Rela *
 prelink_conflict_add_rela (struct prelink_info *info)
+{
+  abort ();
+}
+
+ssize_t
+send_file (int outfd, int infd, off_t *poff, size_t count)
 {
   abort ();
 }

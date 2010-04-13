@@ -1,3 +1,19 @@
+2010-04-13  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/prelink.h (send_file): New prototype.
+	* src/execstack.c (send_file): New dummy function.
+	* src/verify.c (send_file): No longer static.  Don't loop forever
+	if write or read return 0.
+	* src/undo.c (prelink_undo): If undo_output is -, use /tmp/undo
+	instead of - as temp file prefix.
+	* src/dso.c (set_security_context): Drop unused dso argument, add
+	ignore_errors argument.  If it is non-zero, don't error if
+	setfilecon failed.
+	(update_dso): If orig_name is non-NULL, don't error if fchown or
+	fchmod fails.  If rename fails or name1 is - and orig_name is
+	non-NULL, copy the temporary file to name1 (or to stdout if
+	name1 is -) instead of failing.
+
 2010-01-06  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/arch-s390.c (s390_prelink_conflict_rela) <case R_390_PC32DBL>:

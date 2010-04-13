@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2005 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2005, 2010 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -500,7 +500,8 @@ prelink_undo (DSO *dso)
   if (undo == dso->ehdr.e_shnum)
     {
       if (undo_output)
-	return reopen_dso (dso, NULL, undo_output);
+	return reopen_dso (dso, NULL, strcmp (undo_output, "-") == 0
+			   ? "/tmp/undo" : undo_output);
       error (0, 0, "%s does not have .gnu.prelink_undo section", dso->filename);
       return 1;
     }
@@ -516,7 +517,8 @@ prelink_undo (DSO *dso)
   if (undo_sections (dso, undo, move, &rinfo, &ehdr, phdr, shdr))
     goto error_out;
 
-  if (reopen_dso (dso, move, undo_output))
+  if (reopen_dso (dso, move, (undo_output && strcmp (undo_output, "-") == 0)
+			     ? "/tmp/undo" : undo_output))
     goto error_out;
 
   if (find_reloc_sections (dso, &rinfo))
