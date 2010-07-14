@@ -1,3 +1,13 @@
+2010-07-14  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/prelink.h (copy_fd_to_file): New prototype.
+	* src/undo.c (prelink_undo): If undo_output and .gnu.prelink_undo
+	section is not present, don't reopen_dso, just return 0.
+	* src/main.c (main): If dso isn't writable with undo_output,
+	copy_fd_to_file dso->fd.
+	* src/dso.c (copy_fd_to_file): New function.
+	(update_dso): Use it.
+
 2010-04-13  Jakub Jelinek  <jakub@redhat.com>
 
 	* testsuite/reloc8.sh: Don't use -Wl,-z,nocopyreloc on

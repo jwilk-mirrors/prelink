@@ -500,8 +500,7 @@ prelink_undo (DSO *dso)
   if (undo == dso->ehdr.e_shnum)
     {
       if (undo_output)
-	return reopen_dso (dso, NULL, strcmp (undo_output, "-") == 0
-			   ? "/tmp/undo" : undo_output);
+	return 0;
       error (0, 0, "%s does not have .gnu.prelink_undo section", dso->filename);
       return 1;
     }

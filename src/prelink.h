@@ -253,6 +253,7 @@ int adjust_dwarf2 (DSO *dso, int n, GElf_Addr start, GElf_Addr adjust);
 int adjust_mdebug (DSO *dso, int n, GElf_Addr start, GElf_Addr adjust);
 int finalize_mdebug (DSO *dso);
 int relocate_dso (DSO *dso, GElf_Addr base);
+int copy_fd_to_file (int fdin, const char *name, struct stat64 *st);
 int update_dso (DSO *dso, const char *);
 int prepare_write_dso (DSO *dso);
 int write_dso (DSO *dso);

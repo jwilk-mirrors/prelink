@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2007 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2007, 2010 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -351,8 +351,32 @@ main (int argc, char *argv[])
 	    dso->permissive = 1;
 	  else if (undo_output)
 	    {
-	      const char *output = strdup (undo_output);
-	      const char *orig_filename;
+	      const char *output, *orig_filename;
+
+	      if (!dso_is_rdwr (dso))
+		{
+		  struct stat64 st;
+		  int err;
+
+		  if (fstat64 (dso->fd, &st) < 0)
+		    {
+		      error (0, errno, "Could not stat %s", dso->filename);
+		      ++failures;
+		      close_dso (dso);
+		      continue;
+		    }
+		  err = copy_fd_to_file (dso->fd, undo_output, &st);
+		  if (err)
+		    {
+		      error (0, err, "Could not undo %s to %s", dso->filename,
+			     undo_output);
+		      ++failures;
+		    }
+		  close_dso (dso);
+		  continue;
+		}
+
+	      output = strdup (undo_output);
 	      if (!output)
 		{
 		  ++failures;
