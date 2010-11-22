@@ -1,3 +1,9 @@
+2010-11-22  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/dso.c: Include sys/xattr.h.
+	(copy_xattrs): New function.
+	(set_security_context): Call it.
+
 2010-07-14  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/prelink.h (copy_fd_to_file): New prototype.
