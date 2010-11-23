@@ -298,8 +298,8 @@ no_memory:
 }
 
 static int
-adjust_location_list (DSO *dso, unsigned char *ptr, size_t len,
-		      GElf_Addr start, GElf_Addr adjust)
+adjust_location_list (DSO *dso, struct cu_data *cu, unsigned char *ptr,
+		      size_t len, GElf_Addr start, GElf_Addr adjust)
 {
   unsigned char *end = ptr + len;
   unsigned char op;
@@ -369,8 +369,19 @@ adjust_location_list (DSO *dso, unsigned char *ptr, size_t len,
 	case DW_OP_const4u:
 	case DW_OP_const4s:
 	case DW_OP_call4:
-	case DW_OP_call_ref:
 	  ptr += 4;
+	  break;
+	case DW_OP_call_ref:
+	  if (cu == NULL)
+	    {
+	      error (0, 0, "%s: DWARF DW_OP_call_ref shouldn't appear"
+		     " in .debug_frame", dso->filename);
+	      return 1;
+	    }
+	  if (cu->cu_version == 2)
+	    ptr += ptr_size;
+	  else
+	    ptr += 4;
 	  break;
 	case DW_OP_const8u:
 	case DW_OP_const8s:
@@ -395,6 +406,19 @@ adjust_location_list (DSO *dso, unsigned char *ptr, size_t len,
 	    uint32_t len = read_uleb128 (ptr);
 	    ptr += len;
 	  }
+	  break;
+	case DW_OP_GNU_implicit_pointer:
+	  if (cu == NULL)
+	    {
+	      error (0, 0, "%s: DWARF DW_OP_GNU_implicit_pointer shouldn't"
+		     " appear in .debug_frame", dso->filename);
+	      return 1;
+	    }
+	  if (cu->cu_version == 2)
+	    ptr += ptr_size;
+	  else
+	    ptr += 4;
+	  read_uleb128 (ptr);
 	  break;
 	default:
 	  error (0, 0, "%s: Unknown DWARF DW_OP_%d", dso->filename, op);
@@ -464,8 +488,8 @@ adjust_dwarf2_ranges (DSO *dso, GElf_Addr offset, GElf_Addr base,
 }
 
 static int
-adjust_dwarf2_loc (DSO *dso, GElf_Addr offset, GElf_Addr base,
-		   GElf_Addr start, GElf_Addr adjust)
+adjust_dwarf2_loc (DSO *dso, struct cu_data *cu, GElf_Addr offset,
+		   GElf_Addr base, GElf_Addr start, GElf_Addr adjust)
 {
   unsigned char *ptr, *endsec;
   GElf_Addr low, high;
@@ -508,7 +532,7 @@ adjust_dwarf2_loc (DSO *dso, GElf_Addr offset, GElf_Addr base,
       len = read_16 (ptr);
       assert (ptr + len <= endsec);
 
-      if (adjust_location_list (dso, ptr, len, start, adjust))
+      if (adjust_location_list (dso, cu, ptr, len, start, adjust))
 	return 1;
 
       ptr += len;
@@ -568,7 +592,7 @@ adjust_attributes (DSO *dso, unsigned char *ptr, struct abbrev_tag *t,
 		  }
 		else
 		  {
-		    if (adjust_dwarf2_loc (dso, addr, base, start, adjust))
+		    if (adjust_dwarf2_loc (dso, cu, addr, base, start, adjust))
 		      return NULL;
 		  }
 	      }
@@ -682,7 +706,7 @@ adjust_attributes (DSO *dso, unsigned char *ptr, struct abbrev_tag *t,
 		case DW_AT_associated:
 		case DW_AT_data_location:
 		case DW_AT_byte_stride:
-		  if (adjust_location_list (dso, ptr, len, start, adjust))
+		  if (adjust_location_list (dso, cu, ptr, len, start, adjust))
 		    return NULL;
 		  break;
 		default:
@@ -700,7 +724,7 @@ adjust_attributes (DSO *dso, unsigned char *ptr, struct abbrev_tag *t,
 	    }
 	  else if (form == DW_FORM_exprloc)
 	    {
-	      if (adjust_location_list (dso, ptr, len, start, adjust))
+	      if (adjust_location_list (dso, cu, ptr, len, start, adjust))
 		return NULL;
 	      ptr += len;
 	    }
@@ -993,7 +1017,7 @@ adjust_dwarf2_frame (DSO *dso, GElf_Addr start, GElf_Addr adjust)
 	      /* FALLTHROUGH */
 	    case DW_CFA_def_cfa_expression:
 	      len = read_uleb128 (ptr);
-	      if (adjust_location_list (dso, ptr, len, start, adjust))
+	      if (adjust_location_list (dso, NULL, ptr, len, start, adjust))
 		return 1;
 	      ptr += len;
 	      break;

@@ -388,6 +388,7 @@
 #define DW_OP_GNU_push_tls_address	0xe0
 #define DW_OP_GNU_uninit		0xf0
 #define DW_OP_GNU_encoded_addr		0xf1
+#define DW_OP_GNU_implicit_pointer	0xf2
 #define DW_OP_lo_user			0xe0
 #define DW_OP_hi_user			0xff
 
