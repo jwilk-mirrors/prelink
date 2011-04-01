@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2005, 2006, 2009, 2010 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2005, 2006, 2009, 2010, 2011 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -403,8 +403,8 @@ adjust_location_list (DSO *dso, struct cu_data *cu, unsigned char *ptr,
 	  break;
 	case DW_OP_implicit_value:
 	  {
-	    uint32_t len = read_uleb128 (ptr);
-	    ptr += len;
+	    uint32_t leni = read_uleb128 (ptr);
+	    ptr += leni;
 	  }
 	  break;
 	case DW_OP_GNU_implicit_pointer:
@@ -419,6 +419,20 @@ adjust_location_list (DSO *dso, struct cu_data *cu, unsigned char *ptr,
 	  else
 	    ptr += 4;
 	  read_uleb128 (ptr);
+	  break;
+        case DW_OP_GNU_entry_value:
+	  {
+	    uint32_t leni = read_uleb128 (ptr);
+	    if ((end - ptr) < leni)
+	      {
+		error (0, 0, "%s: DWARF DW_OP_GNU_entry_value with too large"
+		       " length", dso->filename);
+		return 1;
+	      }
+	    if (adjust_location_list (dso, cu, ptr, leni, start, adjust))
+	      return 1;
+	    ptr += leni;
+	  }
 	  break;
 	default:
 	  error (0, 0, "%s: Unknown DWARF DW_OP_%d", dso->filename, op);
@@ -706,6 +720,10 @@ adjust_attributes (DSO *dso, unsigned char *ptr, struct abbrev_tag *t,
 		case DW_AT_associated:
 		case DW_AT_data_location:
 		case DW_AT_byte_stride:
+		case DW_AT_GNU_call_site_value:
+		case DW_AT_GNU_call_site_data_value:
+		case DW_AT_GNU_call_site_target:
+		case DW_AT_GNU_call_site_target_clobbered:
 		  if (adjust_location_list (dso, cu, ptr, len, start, adjust))
 		    return NULL;
 		  break;

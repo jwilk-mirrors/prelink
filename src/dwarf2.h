@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2009, 2010 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2009, 2010, 2011 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -82,6 +82,11 @@
 #define DW_TAG_class_template		0x4103
 #define DW_TAG_GNU_BINCL		0x4104
 #define DW_TAG_GNU_EINCL		0x4105
+#define DW_TAG_GNU_template_template_param 0x4106
+#define DW_TAG_GNU_template_parameter_pack 0x4107
+#define DW_TAG_GNU_formal_parameter_pack 0x4108
+#define DW_TAG_GNU_call_site		0x4109
+#define DW_TAG_GNU_call_site_parameter	0x410a
 #define DW_TAG_lo_user			0x4080
 #define DW_TAG_hi_user			0xffff
 
@@ -228,6 +233,24 @@
 #define DW_AT_src_coords		0x2104
 #define DW_AT_body_begin		0x2105
 #define DW_AT_body_end			0x2106
+#define DW_AT_GNU_vector		0x2107
+#define DW_AT_GNU_guarded_by		0x2108
+#define DW_AT_GNU_pt_guarded_by		0x2109
+#define DW_AT_GNU_guarded		0x210a
+#define DW_AT_GNU_pt_guarded		0x210b
+#define DW_AT_GNU_locks_excluded	0x210c
+#define DW_AT_GNU_exclusive_locks_required 0x210d
+#define DW_AT_GNU_shared_locks_required	0x210e
+#define DW_AT_GNU_odr_signature		0x210f
+#define DW_AT_GNU_template_name		0x2110
+#define DW_AT_GNU_call_site_value	0x2111
+#define DW_AT_GNU_call_site_data_value	0x2112
+#define DW_AT_GNU_call_site_target	0x2113
+#define DW_AT_GNU_call_site_target_clobbered 0x2114
+#define DW_AT_GNU_tail_call		0x2115
+#define DW_AT_GNU_all_tail_call_sites	0x2116
+#define DW_AT_GNU_all_call_sites	0x2117
+#define DW_AT_GNU_all_source_call_sites	0x2118
 #define DW_AT_lo_user			0x2000
 #define DW_AT_hi_user			0x3ff0
 
@@ -389,6 +412,7 @@
 #define DW_OP_GNU_uninit		0xf0
 #define DW_OP_GNU_encoded_addr		0xf1
 #define DW_OP_GNU_implicit_pointer	0xf2
+#define DW_OP_GNU_entry_value		0xf3
 #define DW_OP_lo_user			0xe0
 #define DW_OP_hi_user			0xff
 
