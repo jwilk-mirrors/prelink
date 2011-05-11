@@ -1,3 +1,12 @@
+2011-05-11  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/dwarf2.h (DW_OP_GNU_const_type, DW_OP_GNU_regval_type,
+	DW_OP_GNU_deref_type, DW_OP_GNU_convert, DW_OP_GNU_reinterpret):
+	Define.
+	* src/dwarf2.c (adjust_location_list): Handle DW_OP_GNU_const_type,
+	DW_OP_GNU_retval_type, DW_OP_GNU_defer_type, DW_OP_GNU_convert and
+	DW_OP_GNU_reinterpret.
+
 2011-04-01  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/dwarf2.h (DW_TAG_GNU_template_template_param,

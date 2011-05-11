@@ -394,10 +394,13 @@ adjust_location_list (DSO *dso, struct cu_data *cu, unsigned char *ptr,
 	case DW_OP_consts:
 	case DW_OP_breg0 ... DW_OP_breg31:
 	case DW_OP_fbreg:
+	case DW_OP_GNU_convert:
+	case DW_OP_GNU_reinterpret:
 	  read_uleb128 (ptr);
 	  break;
 	case DW_OP_bregx:
 	case DW_OP_bit_piece:
+	case DW_OP_GNU_regval_type:
 	  read_uleb128 (ptr);
 	  read_uleb128 (ptr);
 	  break;
@@ -433,6 +436,14 @@ adjust_location_list (DSO *dso, struct cu_data *cu, unsigned char *ptr,
 	      return 1;
 	    ptr += leni;
 	  }
+	  break;
+        case DW_OP_GNU_const_type:
+	  read_uleb128 (ptr);
+	  ptr += *ptr + 1;
+	  break;
+	case DW_OP_GNU_deref_type:
+	  ++ptr;
+	  read_uleb128 (ptr);
 	  break;
 	default:
 	  error (0, 0, "%s: Unknown DWARF DW_OP_%d", dso->filename, op);

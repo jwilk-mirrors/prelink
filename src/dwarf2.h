@@ -413,6 +413,11 @@
 #define DW_OP_GNU_encoded_addr		0xf1
 #define DW_OP_GNU_implicit_pointer	0xf2
 #define DW_OP_GNU_entry_value		0xf3
+#define DW_OP_GNU_const_type		0xf4
+#define DW_OP_GNU_regval_type		0xf5
+#define DW_OP_GNU_deref_type		0xf6
+#define DW_OP_GNU_convert		0xf7
+#define DW_OP_GNU_reinterpret		0xf9
 #define DW_OP_lo_user			0xe0
 #define DW_OP_hi_user			0xff
 
