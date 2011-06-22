@@ -1,3 +1,9 @@
+2011-06-22  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/dwarf2.h (DW_OP_GNU_parameter_ref): Define.
+	* src/dwarf2.c (adjust_location_list): Handle
+	DW_OP_GNU_parameter_ref.
+
 2011-05-11  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/dwarf2.h (DW_OP_GNU_const_type, DW_OP_GNU_regval_type,

@@ -369,6 +369,7 @@ adjust_location_list (DSO *dso, struct cu_data *cu, unsigned char *ptr,
 	case DW_OP_const4u:
 	case DW_OP_const4s:
 	case DW_OP_call4:
+	case DW_OP_GNU_parameter_ref:
 	  ptr += 4;
 	  break;
 	case DW_OP_call_ref:

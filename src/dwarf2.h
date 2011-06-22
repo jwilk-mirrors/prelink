@@ -418,6 +418,7 @@
 #define DW_OP_GNU_deref_type		0xf6
 #define DW_OP_GNU_convert		0xf7
 #define DW_OP_GNU_reinterpret		0xf9
+#define DW_OP_GNU_parameter_ref		0xfa
 #define DW_OP_lo_user			0xe0
 #define DW_OP_hi_user			0xff
 
