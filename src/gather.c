@@ -736,25 +736,36 @@ make_unprelinkable:
 		  if (e_ident [offsetof (Elf32_Ehdr, e_phoff)]
 		      == sizeof (Elf32_Ehdr)
 		      && memcmp (e_ident + offsetof (Elf32_Ehdr, e_phoff) + 1,
-				 "\0\0\0", 3) == 0
-		      && (e_ident [offsetof (Elf32_Ehdr, e_phnum)]
-			  || e_ident [offsetof (Elf32_Ehdr, e_phnum) + 1])
-		      && e_ident [sizeof (Elf32_Ehdr)
-				  + offsetof (Elf32_Phdr, p_type)] == PT_PHDR
-		      && memcmp (e_ident + sizeof (Elf32_Ehdr)
-				 + offsetof (Elf32_Phdr, p_type) + 1,
 				 "\0\0\0", 3) == 0)
 		    {
-maybe_pie:
-		      dso = fdopen_dso (fd, name);
-		      if (dso == NULL)
-			goto close_it;
-		      if (dynamic_info_is_set (dso, DT_DEBUG))
+		      Elf32_Half phnum, i;
+		      unsigned char *p;
+		      phnum = e_ident [offsetof (Elf32_Ehdr, e_phnum)]
+			      + (e_ident [offsetof (Elf32_Ehdr, e_phnum) + 1]
+				 << 8);
+		      p = e_ident + sizeof (Elf32_Ehdr)
+			  + offsetof (Elf32_Phdr, p_type);
+		      for (i = 0; i < phnum; i++, p += sizeof (Elf32_Phdr))
 			{
-			  close_dso (dso);
-			  goto make_unprelinkable;
+			  if (p[0] == PT_PHDR
+			      && memcmp (p + 1, "\0\0\0", 3) == 0)
+			    {
+maybe_pie:
+			      dso = fdopen_dso (fd, name);
+			      if (dso == NULL)
+				goto close_it;
+			      if (dynamic_info_is_set (dso, DT_DEBUG))
+				{
+				  close_dso (dso);
+				  goto make_unprelinkable;
+				}
+			      close_dso (dso);
+			      goto close_it;
+			    }
+			  if (p[3] < (PT_LOPROC >> 24)
+			      || p[3] > (PT_HIPROC >> 24))
+			    break;
 			}
-		      close_dso (dso);
 		    }
 		  goto close_it;
 		}
@@ -763,15 +774,25 @@ maybe_pie:
 		  if (e_ident [offsetof (Elf64_Ehdr, e_phoff)]
 		      == sizeof (Elf64_Ehdr)
 		      && memcmp (e_ident + offsetof (Elf64_Ehdr, e_phoff) + 1,
-				 "\0\0\0\0\0\0\0", 7) == 0
-		      && (e_ident [offsetof (Elf64_Ehdr, e_phnum)]
-			  || e_ident [offsetof (Elf64_Ehdr, e_phnum) + 1])
-		      && e_ident [sizeof (Elf64_Ehdr)
-				  + offsetof (Elf64_Phdr, p_type)] == PT_PHDR
-		      && memcmp (e_ident + sizeof (Elf64_Ehdr)
-				 + offsetof (Elf64_Phdr, p_type) + 1,
-				 "\0\0\0", 3) == 0)
-		    goto maybe_pie;
+				 "\0\0\0\0\0\0\0", 7) == 0)
+		    {
+		      Elf64_Half phnum, i;
+		      unsigned char *p;
+		      phnum = e_ident [offsetof (Elf64_Ehdr, e_phnum)]
+			      + (e_ident [offsetof (Elf64_Ehdr, e_phnum) + 1]
+				 << 8);
+		      p = e_ident + sizeof (Elf64_Ehdr)
+			  + offsetof (Elf64_Phdr, p_type);
+		      for (i = 0; i < phnum; i++, p += sizeof (Elf64_Phdr))
+			{
+			  if (p[0] == PT_PHDR
+			      && memcmp (p + 1, "\0\0\0", 3) == 0)
+			    goto maybe_pie;
+			  if (p[3] < (PT_LOPROC >> 24)
+			      || p[3] > (PT_HIPROC >> 24))
+			    break;
+			}
+		    }
 		  goto close_it;
 		}
 	      else
@@ -790,16 +811,24 @@ maybe_pie:
 		  if (e_ident [offsetof (Elf32_Ehdr, e_phoff) + 3]
 		      == sizeof (Elf32_Ehdr)
 		      && memcmp (e_ident + offsetof (Elf32_Ehdr, e_phoff),
-				 "\0\0\0", 3) == 0
-		      && (e_ident [offsetof (Elf32_Ehdr, e_phnum)]
-			  || e_ident [offsetof (Elf32_Ehdr, e_phnum) + 1])
-		      && e_ident [sizeof (Elf32_Ehdr)
-				  + offsetof (Elf32_Phdr, p_type) + 3]
-			 == PT_PHDR
-		      && memcmp (e_ident + sizeof (Elf32_Ehdr)
-				 + offsetof (Elf32_Phdr, p_type),
 				 "\0\0\0", 3) == 0)
-		    goto maybe_pie;
+		    {
+		      Elf32_Half phnum, i;
+		      unsigned char *p;
+		      phnum = (e_ident [offsetof (Elf32_Ehdr, e_phnum)] << 8)
+			      + e_ident [offsetof (Elf32_Ehdr, e_phnum) + 1];
+		      p = e_ident + sizeof (Elf32_Ehdr)
+			  + offsetof (Elf32_Phdr, p_type);
+		      for (i = 0; i < phnum; i++, p += sizeof (Elf32_Phdr))
+			{
+			  if (p[3] == PT_PHDR
+			      && memcmp (p, "\0\0\0", 3) == 0)
+			    goto maybe_pie;
+			  if (p[0] < (PT_LOPROC >> 24)
+			      || p[0] > (PT_HIPROC >> 24))
+			    break;
+			}
+		    }
 		  goto close_it;
 		}
 	      else if (e_ident [EI_CLASS] == ELFCLASS64)
@@ -807,16 +836,24 @@ maybe_pie:
 		  if (e_ident [offsetof (Elf64_Ehdr, e_phoff) + 7]
 		      == sizeof (Elf64_Ehdr)
 		      && memcmp (e_ident + offsetof (Elf64_Ehdr, e_phoff),
-				 "\0\0\0\0\0\0\0", 7) == 0
-		      && (e_ident [offsetof (Elf64_Ehdr, e_phnum)]
-			  || e_ident [offsetof (Elf64_Ehdr, e_phnum) + 1])
-		      && e_ident [sizeof (Elf64_Ehdr)
-				  + offsetof (Elf64_Phdr, p_type) + 3]
-			 == PT_PHDR
-		      && memcmp (e_ident + sizeof (Elf64_Ehdr)
-				 + offsetof (Elf64_Phdr, p_type),
-				 "\0\0\0", 3) == 0)
-		    goto maybe_pie;
+				 "\0\0\0\0\0\0\0", 7) == 0)
+		    {
+		      Elf64_Half phnum, i;
+		      unsigned char *p;
+		      phnum = (e_ident [offsetof (Elf64_Ehdr, e_phnum)] << 8)
+			      + e_ident [offsetof (Elf64_Ehdr, e_phnum) + 1];
+		      p = e_ident + sizeof (Elf64_Ehdr)
+			  + offsetof (Elf64_Phdr, p_type);
+		      for (i = 0; i < phnum; i++, p += sizeof (Elf64_Phdr))
+			{
+			  if (p[3] == PT_PHDR
+			      && memcmp (p, "\0\0\0", 3) == 0)
+			    goto maybe_pie;
+			  if (p[0] < (PT_LOPROC >> 24)
+			      || p[0] > (PT_HIPROC >> 24))
+			    break;
+			}
+		    }
 		  goto close_it;
 		}
 	      else

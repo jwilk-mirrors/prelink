@@ -1,5 +1,8 @@
 2011-08-25  Jakub Jelinek  <jakub@redhat.com>
 
+	* src/gather.c (gather_func): When looking for PT_PHDR header,
+	skip any PT_LOPROC ... PR_HIPROC phdrs.
+
 	* testsuite/cxx1.sh: Don't check for any "Removing C++ conflict"
 	messages on arm.
 	* testsuite/cxx2.sh: Likewise.
