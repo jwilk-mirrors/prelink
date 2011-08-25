@@ -16,7 +16,7 @@ int main()
   exit (0);
 }
 
-asm (".section nonalloced,\"aw\",@nobits\n\t"
+asm (".section nonalloced,\"aw\",%nobits\n\t"
      ".globl testzero\n\t"
      "testzero: .skip 16384\n\t"
      ".previous");

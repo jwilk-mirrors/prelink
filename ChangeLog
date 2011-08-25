@@ -1,3 +1,10 @@
+2011-08-25  William Cohen  <wcohen@redhat.com>
+
+	* testsuite/shuffle2.c: Use %nobits instead of @nobits
+	to be arm assembler friendly.
+	* testsuite/shuffle9.c: Likewise.
+	* testsuite/reloc5.c (main): Likewise.
+
 2011-06-22  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/dwarf2.h (DW_OP_GNU_parameter_ref): Define.
