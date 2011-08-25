@@ -1,3 +1,16 @@
+2011-08-25  Jakub Jelinek  <jakub@redhat.com>
+
+	* testsuite/cxx1.sh: Don't check for any "Removing C++ conflict"
+	messages on arm.
+	* testsuite/cxx2.sh: Likewise.
+	* testsuite/cxx3.sh: New test.
+	* testsuite/cxx3.C: New file.
+	* testsuite/cxx3.h: New file.
+	* testsuite/cxx3lib1.C: New file.
+	* testsuite/cxx3lib2.C: New file.
+	* testsuite/Makefile.am (TESTS): Add cxx3.sh.
+	* testsuite/Makefile.in: Regenerated.
+
 2011-08-25  William Cohen  <wcohen@redhat.com>
 
 	* testsuite/shuffle2.c: Use %nobits instead of @nobits

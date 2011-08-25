@@ -11,7 +11,10 @@ savelibs
 echo $PRELINK -vvvv ${PRELINK_OPTS--vm} ./cxx2 > cxx2.log
 $PRELINK -vvvv ${PRELINK_OPTS--vm} ./cxx2 >> cxx2.log 2>&1 || exit 1
 grep ^`echo $PRELINK | sed 's/ .*$/: /'` cxx2.log | grep -q -v 'C++ conflict' && exit 2
-[ $( grep ^`echo $PRELINK | sed 's/ .*$/: /'` cxx2.log | grep 'Removing C++ conflict' | wc -l ) -ge 9 ] || exit 3
+case "`uname -m`" in
+  arm*) ;; # EABI says that vtables/typeinfo aren't vague linkage if there is a key method
+  *) [ $( grep ^`echo $PRELINK | sed 's/ .*$/: /'` cxx2.log | grep 'Removing C++ conflict' | wc -l ) -ge 9 ] || exit 3;;
+esac
 LD_LIBRARY_PATH=. ./cxx2 || exit 4
 readelf -a ./cxx2 >> cxx2.log 2>&1 || exit 5
 # So that it is not prelinked again
