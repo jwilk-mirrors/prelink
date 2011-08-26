@@ -1,3 +1,8 @@
+2011-08-26  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/arch-arm.c (PL_ARCH): Change .dynamic_linker to
+	/lib/ld-linux.so.3.
+
 2011-08-25  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/gather.c (gather_func): When looking for PT_PHDR header,

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2004, 2009 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2004, 2009, 2011 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -832,7 +832,7 @@ PL_ARCH = {
   .R_COPY = R_ARM_COPY,
   .R_RELATIVE = R_ARM_RELATIVE,
   .rtype_class_valid = RTYPE_CLASS_VALID,
-  .dynamic_linker = "/lib/ld-linux.so.2",
+  .dynamic_linker = "/lib/ld-linux.so.3",
   .adjust_dyn = arm_adjust_dyn,
   .adjust_rel = arm_adjust_rel,
   .adjust_rela = arm_adjust_rela,
