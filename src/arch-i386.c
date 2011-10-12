@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2009 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2009, 2011 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -870,8 +870,13 @@ i386_layout_libs_init (struct layout_libs *l)
     {
       int i;
       struct prelink_entry *e;
+      Elf32_Addr reg0s;
 
-      l->mmap_base = REG0S;
+      if (l->max_page_size > 0x200000)
+	error (EXIT_FAILURE, 0, "--layout-page-size too large");
+
+      reg0s = (REG0S + l->max_page_size - 1) & ~(l->max_page_size - 1);
+      l->mmap_base = reg0s;
       l->mmap_end = REG2E;
       /* Don't allow this to be overridden.  */
       mmap_reg_start = ~(GElf_Addr) 0;
@@ -881,7 +886,7 @@ i386_layout_libs_init (struct layout_libs *l)
 	  e = l->libs[i];
 	  if (e->done == 0)
 	    continue;
-	  if (e->base < REG0S
+	  if (e->base < reg0s
 	      || (e->base < REG1S && e->layend > REG0E)
 	      || (e->base < REG2S && e->layend > REG1E)
 	      || e->layend > REG2E)
@@ -957,7 +962,7 @@ i386_find_free_addr (struct layout_libs *l, Elf32_Addr *ret,
 static int
 i386_layout_libs_pre (struct layout_libs *l)
 {
-  Elf32_Addr mmap_start, virt;
+  Elf32_Addr mmap_start, virt, reg0s;
   struct prelink_entry *e, *next;
   struct i386_layout_data *pld;
   int i;
@@ -975,16 +980,17 @@ i386_layout_libs_pre (struct layout_libs *l)
     error (EXIT_FAILURE, ENOMEM, "Cannot lay libraries out");
 
   l->arch_data = pld;
+  reg0s = (REG0S + l->max_page_size - 1) & ~(l->max_page_size - 1);
 
-  mmap_start = l->mmap_start - REG0S;
+  mmap_start = l->mmap_start - reg0s;
   /* Unless not randomizing, try not to make the first region
      too small, because otherwise it is likely libc.so as first
-     big library would often end up at REG0S.  */
-  virt = mmap_start % (REG0E - REG0S - 0x200000);
-  i386_find_free_addr (l, pld->addrs + 0, REG0S, REG0E, REG0S + virt);
+     big library would often end up at reg0s.  */
+  virt = mmap_start % (REG0E - reg0s - 0x200000);
+  i386_find_free_addr (l, pld->addrs + 0, reg0s, REG0E, reg0s + virt);
   virt = mmap_start % (REG1E - REG1S - 0x200000);
   i386_find_free_addr (l, pld->addrs + 4, REG1S, REG1E, REG1S + virt);
-  virt = mmap_start % (REG0E - REG0S - 0x200000);
+  virt = mmap_start % (REG2E - REG2S - 0x200000);
   i386_find_free_addr (l, pld->addrs + 8, REG2S, REG2E, REG2S + virt);
   i = 0;
   virt = pld->addrs[3] - pld->addrs[2];

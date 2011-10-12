@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2007, 2010 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2007, 2010, 2011 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -53,6 +53,7 @@ int compute_checksum;
 long long seed;
 GElf_Addr mmap_reg_start = ~(GElf_Addr) 0;
 GElf_Addr mmap_reg_end = ~(GElf_Addr) 0;
+GElf_Addr layout_page_size = 0;
 const char *dynamic_linker;
 const char *ld_library_path;
 const char *prelink_conf = PRELINK_CONF;
@@ -77,6 +78,7 @@ static char argp_doc[] = "prelink -- program to relocate and prelink ELF shared 
 #define OPT_MD5			0x89
 #define OPT_SHA			0x8a
 #define OPT_COMPUTE_CHECKSUM	0x8b
+#define OPT_LAYOUT_PAGE_SIZE	0x8c
 
 static struct argp_option options[] = {
   {"all",		'a', 0, 0,  "Prelink all binaries" },
@@ -106,6 +108,7 @@ static struct argp_option options[] = {
   {"ld-library-path",	OPT_LD_LIBRARY_PATH, "PATHLIST",
 				0,  "What LD_LIBRARY_PATH should be used" },
   {"libs-only",		OPT_LIBS_ONLY, 0, 0, "Prelink only libraries, no binaries" },
+  {"layout-page-size",	OPT_LAYOUT_PAGE_SIZE, "SIZE", 0, "Layout start of libraries at given boundary" },
   {"disable-c++-optimizations", OPT_CXX_DISABLE, 0, OPTION_HIDDEN, "" },
   {"mmap-region-start",	OPT_MMAP_REG_START, "BASE_ADDRESS", OPTION_HIDDEN, "" },
   {"mmap-region-end",	OPT_MMAP_REG_END, "BASE_ADDRESS", OPTION_HIDDEN, "" },
@@ -222,6 +225,11 @@ parse_opt (int key, char *arg, struct argp_state *state)
     case OPT_COMPUTE_CHECKSUM:
       compute_checksum = 1;
       break;
+    case OPT_LAYOUT_PAGE_SIZE:
+      layout_page_size = strtoull (arg, &endarg, 0);
+      if (endarg != strchr (arg, '\0') || (layout_page_size & (layout_page_size - 1)))
+	error (EXIT_FAILURE, 0, "--layout-page-size option requires numberic power-of-two argument");
+      break;
     default:
       return ARGP_ERR_UNKNOWN;
     }
@@ -229,6 +237,44 @@ parse_opt (int key, char *arg, struct argp_state *state)
 }
 
 static struct argp argp = { options, parse_opt, "[FILES]", argp_doc };
+
+#if (defined (__i386__) || defined (__x86_64__)) && defined (__GNUC__)
+static void
+set_default_layout_page_size (void)
+{
+  /* From gcc.dg/20020523-1.c test in gcc 3.2 testsuite.  */
+  int fl1, fl2;
+
+#ifndef __x86_64__
+  /* See if we can use cpuid.  */
+  __asm__ ("pushfl; pushfl; popl %0; movl %0,%1; xorl %2,%0;"
+	   "pushl %0; popfl; pushfl; popl %0; popfl"
+	   : "=&r" (fl1), "=&r" (fl2)
+	   : "i" (0x00200000));
+  if (((fl1 ^ fl2) & 0x00200000) == 0)
+    return;
+#define cpuid(fl1, fl2, fn) \
+  __asm__ ("movl %%ebx, %1; cpuid; xchgl %%ebx, %1" \
+	   : "=a" (fl1), "=r" (fl2) : "0" (fn) : "ecx", "edx")
+#else
+#define cpuid(fl1, fl2, fn) \
+  __asm__ ("cpuid" : "=a" (fl1), "=b" (fl2) : "0" (fn) : "ecx", "edx")
+#endif
+
+  /* See if CPUID gives capabilities.  */
+  cpuid (fl1, fl2, 0);
+  if (fl1 < 1 || fl2 != 0x68747541 /* Auth - AMD */)
+    return;
+
+  /* CPUID 1.  */
+  cpuid (fl1, fl2, 1);
+  if (((fl1 >> 8) & 0x0f) + ((fl1 >> 20) & 0xff) == 0x15 /* Family */)
+    /* On AMD Bulldozer CPUs default to --layout-page-size=0x8000.  */
+    layout_page_size = 0x8000;
+}
+#else
+# define set_default_layout_page_size()
+#endif
 
 int
 main (int argc, char *argv[])
@@ -240,6 +286,8 @@ main (int argc, char *argv[])
   /* Set the default for exec_shield.  */
   if (! access ("/proc/sys/kernel/exec-shield", F_OK))
     exec_shield = 1;
+
+  set_default_layout_page_size ();
 
   prelink_init_cache ();
 

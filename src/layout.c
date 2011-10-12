@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2006 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2006, 2011 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -253,9 +253,11 @@ layout_libs (void)
       l.flags = arches[arch];
       l.libs = plibs;
       l.binlibs = pbinlibs;
-      l.max_page_size = plarch->max_page_size;
-      htab_traverse (prelink_filename_htab, find_libs, &l);
       max_page_size = plarch->max_page_size;
+      if (layout_page_size > max_page_size)
+	max_page_size = layout_page_size;
+      l.max_page_size = max_page_size;
+      htab_traverse (prelink_filename_htab, find_libs, &l);
 
       /* Make sure there is some room between libraries.  */
       for (i = 0; i < l.nlibs; ++i)
@@ -280,6 +282,8 @@ layout_libs (void)
       if (mmap_base >= mmap_end)
 	error (EXIT_FAILURE, 0,
 	       "--mmap-region-start cannot be bigger than --mmap-region-end");
+      if ((mmap_base | mmap_end) & (max_page_size - 1))
+	error (EXIT_FAILURE, 0, "--layout-page-size too large");
       class = plarch->class;
       /* The code below relies on having a VA slot as big as <mmap_base,mmap_end)
 	 above mmap_end for -R.  */

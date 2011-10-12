@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2009 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2009, 2011 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -964,6 +964,9 @@ ppc_layout_libs_pre (struct layout_libs *l)
   struct prelink_entry *e, e0, *next = NULL;
   struct ppc_layout_data *pld;
   int cnt;
+
+  if (l->max_page_size > 0x10000)
+    error (EXIT_FAILURE, 0, "--layout-page-size too large");
 
   mmap_start = REG0E - (mmap_start & 0xff0000);
   for (cnt = 0, e = l->list; e != NULL; e = e->next, ++cnt)

@@ -1,3 +1,27 @@
+2011-10-12  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/main.c (layout_page_size): New variable.
+	(OPT_LAYOUT_PAGE_SIZE): Define.
+	(options): Add --layout-page-size option.
+	(set_default_layout_page_size): New function in i?86/x86_64
+	resp. empty macro on other architectures.
+	(main): Call it.
+	* src/arch-i386.c (i386_layout_libs_init): Fail if
+	l->max_page_size is larger than 2MB and exec_shield is true.
+	Compute reg0s as REG0S rounded up to l->max_page_size
+	boundary and use it instead of REG0S.
+	(i386_layout_libs_pre): Compute reg0s as REG0S rounded up to
+	l->max_page_size boundary and use it instead of REG0S.
+	Fix up a pasto in computation of virt parameter for
+	third i386_find_free_addr call.
+	* src/prelink.h (layout_page_size): New decl.
+	* src/layout.c (layout_libs): Set max_page_size and
+	l.max_page_size to maximum of plarch->max_page_size
+	and layout_page_size.  Fail if mmap_base or mmap_end
+	aren't max_page_size aligned.
+	* src/arch-ppc.c (ppc_layout_libs_pre): Give up if
+	l->max_page_size is larger than 64KB.
+
 2011-08-26  Jakub Jelinek  <jakub@redhat.com>
 
 	* testsuite/cxx3.sh: Expect fewer conflicts.

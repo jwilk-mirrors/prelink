@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2009, 2010
+/* Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2009, 2010, 2011
    Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
@@ -540,6 +540,6 @@ enum verify_method_t { VERIFY_CONTENT, VERIFY_MD5, VERIFY_SHA };
 extern enum verify_method_t verify_method;
 extern int quick;
 extern long long seed;
-extern GElf_Addr mmap_reg_start, mmap_reg_end;
+extern GElf_Addr mmap_reg_start, mmap_reg_end, layout_page_size;
 
 #endif /* PRELINK_H */
