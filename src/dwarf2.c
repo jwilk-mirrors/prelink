@@ -1,4 +1,5 @@
-/* Copyright (C) 2001, 2002, 2003, 2005, 2006, 2009, 2010, 2011 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2005, 2006, 2009, 2010, 2011, 2012
+   Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -586,10 +587,16 @@ adjust_attributes (DSO *dso, unsigned char *ptr, struct abbrev_tag *t,
 	{
 	  switch (t->attr[i].attr)
 	    {
+	    case DW_AT_data_member_location:
+	      /* In DWARF4+ DW_AT_data_member_location
+		 with DW_FORM_data[48] is just very high
+		 constant, rather than loclistptr.  */
+	      if (cu->cu_version >= 4 && form != DW_FORM_sec_offset)
+		break;
+	      /* FALLTHRU */
 	    case DW_AT_location:
 	    case DW_AT_string_length:
 	    case DW_AT_return_addr:
-	    case DW_AT_data_member_location:
 	    case DW_AT_frame_base:
 	    case DW_AT_segment:
 	    case DW_AT_static_link:

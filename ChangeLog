@@ -1,3 +1,9 @@
+2012-04-02  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/dwarf2.c (adjust_attributes): For DWARF4+ treat
+	DW_AT_data_member_location with DW_FORM_data[48] as
+	large constant instead of loclistptr.
+
 2011-10-12  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/main.c (layout_page_size): New variable.
