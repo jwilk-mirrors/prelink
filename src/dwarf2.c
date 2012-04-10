@@ -163,6 +163,7 @@ static struct
 #define DEBUG_FRAME	9
 #define DEBUG_RANGES	10
 #define DEBUG_TYPES	11
+#define DEBUG_MACRO	12
     { ".debug_info", NULL, 0, 0 },
     { ".debug_abbrev", NULL, 0, 0 },
     { ".debug_line", NULL, 0, 0 },
@@ -175,6 +176,7 @@ static struct
     { ".debug_frame", NULL, 0, 0 },
     { ".debug_ranges", NULL, 0, 0 },
     { ".debug_types", NULL, 0, 0 },
+    { ".debug_macro", NULL, 0, 0 },
     { NULL, NULL, 0 }
   };
 

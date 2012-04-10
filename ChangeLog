@@ -1,3 +1,8 @@
+2012-04-10  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/dwarf2.c (DEBUG_MACRO): Define.
+	(debug_sections): Add .debug_macro entry.
+
 2012-04-02  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/dwarf2.c (adjust_attributes): For DWARF4+ treat
