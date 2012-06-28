@@ -277,7 +277,10 @@ no_memory:
 	    }
 	  form = read_uleb128 (ptr);
 	  if (form == 2
-	      || (form > DW_FORM_flag_present && form != DW_FORM_ref_sig8))
+	      || (form > DW_FORM_flag_present
+		  && form != DW_FORM_ref_sig8
+		  && form != DW_FORM_GNU_ref_alt
+		  && form != DW_FORM_GNU_strp_alt))
 	    {
 	      error (0, 0, "%s: Unknown DWARF DW_FORM_%d", dso->filename, form);
 	      htab_delete (h);
@@ -662,6 +665,7 @@ adjust_attributes (DSO *dso, unsigned char *ptr, struct abbrev_tag *t,
 	      ptr += 2;
 	      break;
 	    case DW_FORM_ref4:
+	    case DW_FORM_GNU_ref_alt:
 	    case DW_FORM_data4:
 	    case DW_FORM_sec_offset:
 	      ptr += 4;
@@ -683,6 +687,7 @@ adjust_attributes (DSO *dso, unsigned char *ptr, struct abbrev_tag *t,
 		ptr += 4;
 	      break;
 	    case DW_FORM_strp:
+	    case DW_FORM_GNU_strp_alt:
 	      ptr += 4;
 	      break;
 	    case DW_FORM_string:

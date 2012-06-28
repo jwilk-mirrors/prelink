@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2009, 2010, 2011 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2009, 2010, 2011, 2012 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -118,6 +118,8 @@
 #define DW_FORM_exprloc			0x18
 #define DW_FORM_flag_present		0x19
 #define DW_FORM_ref_sig8		0x20
+#define DW_FORM_GNU_ref_alt		0x1f20
+#define DW_FORM_GNU_strp_alt		0x1f21
 
 #define DW_AT_sibling			0x01
 #define DW_AT_location			0x02
