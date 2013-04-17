@@ -13,7 +13,7 @@ $CC -shared -O2 -fpic -o tls5lib2.so $srcdir/tls1lib2.c \
   -Wl,--rpath-link,. tls5lib1.so
 BINS="tls5"
 LIBS="tls5lib1.so tls5lib2.so tls5lib3.so"
-$CCLINK -o tls5 $srcdir/tls1.c -Wl,--rpath-link,. tls5lib2.so
+$CCLINK -o tls5 $srcdir/tls1.c -Wl,--rpath-link,. tls5lib2.so -lc tls5lib1.so
 savelibs
 echo $PRELINK ${PRELINK_OPTS--vm} ./tls5 > tls5.log
 $PRELINK ${PRELINK_OPTS--vm} ./tls5 >> tls5.log 2>&1 || exit 1

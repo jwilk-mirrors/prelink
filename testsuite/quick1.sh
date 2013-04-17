@@ -55,16 +55,16 @@ for lib in `cat syslnk.list`; do
   cp -dp $lib quick1.tree/lib
 done
 $CCLINK -o quick1.tree/usr/bin/bin1 $srcdir/reloc1.c \
-    -Wl,--rpath-link,quick1.tree/usr/lib -L quick1.tree/usr/lib -l2
+    -Wl,--rpath-link,quick1.tree/usr/lib -L quick1.tree/usr/lib -l2 -lc -l1
 echo 'int main () { extern int foo; return foo; }' \
   | $CCLINK -o quick1.tree/usr/bin/bin2 -xc - -xnone \
     -L quick1.tree/usr/lib -l4
 $CCLINK -o quick1.tree/usr/bin/bin3 $srcdir/reloc1.c \
-    -Wl,--rpath-link,quick1.tree/usr/lib -L quick1.tree/usr/lib -l7
+    -Wl,--rpath-link,quick1.tree/usr/lib -L quick1.tree/usr/lib -l7 -lc -l2 -l1
 $CCLINK -o quick1.tree/usr/bin/bin4 $srcdir/quick1.c \
-    -Wl,--rpath-link,quick1.tree/usr/lib -L quick1.tree/usr/lib -l2
+    -Wl,--rpath-link,quick1.tree/usr/lib -L quick1.tree/usr/lib -l2 -lc -l1
 $CCLINK -o quick1.tree/usr/bin/bin5 $srcdir/quick1.c \
-    -Wl,--rpath-link,quick1.tree/usr/lib -L quick1.tree/usr/lib -l7
+    -Wl,--rpath-link,quick1.tree/usr/lib -L quick1.tree/usr/lib -l7 -lc -l2 -l1
 echo 'int main () { return 0; }' \
   | $CCLINK -o quick1.tree/usr/bin/bin6 -xc - -xnone \
     -Wl,--rpath-link,quick1.tree/usr/lib -L quick1.tree/usr/lib -l6

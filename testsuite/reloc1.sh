@@ -6,7 +6,7 @@ $CC -shared -O2 -fpic -o reloc1lib1.so $srcdir/reloc1lib1.c
 $CC -shared -O2 -fpic -o reloc1lib2.so $srcdir/reloc1lib2.c reloc1lib1.so
 BINS="reloc1"
 LIBS="reloc1lib1.so reloc1lib2.so"
-$CCLINK -o reloc1 $srcdir/reloc1.c -Wl,--rpath-link,. reloc1lib2.so
+$CCLINK -o reloc1 $srcdir/reloc1.c -Wl,--rpath-link,. reloc1lib2.so -lc reloc1lib1.so
 savelibs
 echo $PRELINK ${PRELINK_OPTS--vm} ./reloc1 > reloc1.log
 $PRELINK ${PRELINK_OPTS--vm} ./reloc1 >> reloc1.log 2>&1 || exit 1

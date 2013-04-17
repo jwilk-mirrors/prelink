@@ -1,3 +1,42 @@
+2013-04-17  Jakub Jelinek  <jakub@redhat.com>
+
+	* testsuite/ifunc.h (IFUNC_DECL): Fix up .size on ppc64.
+	* testsuite/cxx1.sh: Add libraries to link lines to make
+	testsuite work both with --no-add-needed and with --add-needed,
+	including latest ld.bfd.
+	* testsuite/cxx2.sh: Likewise.
+	* testsuite/cxx3.sh: Likewise.
+	* testsuite/deps1.sh: Likewise.
+	* testsuite/deps2.sh: Likewise.
+	* testsuite/ifunc1.sh: Likewise.
+	* testsuite/ifunc2.sh: Likewise.
+	* testsuite/ifunc3.sh: Likewise.
+	* testsuite/quick1.sh: Likewise.
+	* testsuite/quick2.sh: Likewise.
+	* testsuite/quick3.sh: Likewise.
+	* testsuite/reloc1.sh: Likewise.
+	* testsuite/reloc10.sh: Likewise.
+	* testsuite/reloc11.sh: Likewise.
+	* testsuite/reloc3.sh: Likewise.
+	* testsuite/reloc6.sh: Likewise.
+	* testsuite/reloc7.sh: Likewise.
+	* testsuite/shuffle1.sh: Likewise.
+	* testsuite/shuffle2.sh: Likewise.
+	* testsuite/shuffle3.sh: Likewise.
+	* testsuite/shuffle4.sh: Likewise.
+	* testsuite/shuffle5.sh: Likewise.
+	* testsuite/shuffle6.sh: Likewise.
+	* testsuite/shuffle7.sh: Likewise.
+	* testsuite/shuffle8.sh: Likewise.
+	* testsuite/shuffle9.sh: Likewise.
+	* testsuite/tls1.sh: Likewise.
+	* testsuite/tls2.sh: Likewise.
+	* testsuite/tls3.sh: Likewise.
+	* testsuite/tls4.sh: Likewise.
+	* testsuite/tls5.sh: Likewise.
+	* testsuite/tls6.sh: Likewise.
+	* testsuite/undo1.sh: Likewise.
+
 2012-06-28  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/get.c (is_ldso_soname): Add arm dynamic linker SONAMEs.

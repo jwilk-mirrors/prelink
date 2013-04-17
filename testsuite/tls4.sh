@@ -12,7 +12,7 @@ $CC -shared -O2 -fpic -o tls4lib2.so $srcdir/tls4lib2.c \
   tls4lib1.so 2>/dev/null
 BINS="tls4"
 LIBS="tls4lib1.so tls4lib2.so"
-$CCLINK -o tls4 $srcdir/tls4.c -Wl,--rpath-link,. tls4lib2.so
+$CCLINK -o tls4 $srcdir/tls4.c -Wl,--rpath-link,. tls4lib2.so -lc tls4lib1.so
 savelibs
 echo $PRELINK ${PRELINK_OPTS--vm} ./tls4 > tls4.log
 $PRELINK ${PRELINK_OPTS--vm} ./tls4 >> tls4.log 2>&1 || exit 1

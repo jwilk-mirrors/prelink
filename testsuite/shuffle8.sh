@@ -6,7 +6,7 @@ $CC -shared -O2 -fpic -o shuffle8lib1.so $srcdir/reloc1lib1.c
 $CC -shared -O2 -fpic -o shuffle8lib2.so $srcdir/reloc1lib2.c shuffle8lib1.so
 BINS="shuffle8"
 LIBS="shuffle8lib1.so shuffle8lib2.so"
-$CCLINK -o shuffle8 $srcdir/shuffle8.c -Wl,--rpath-link,. shuffle8lib2.so
+$CCLINK -o shuffle8 $srcdir/shuffle8.c -Wl,--rpath-link,. shuffle8lib2.so -lc shuffle8lib1.so
 strip -R .comment shuffle8
 savelibs
 echo $PRELINK ${PRELINK_OPTS--vm} ./shuffle8 > shuffle8.log

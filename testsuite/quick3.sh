@@ -43,7 +43,7 @@ for lib in `cat syslnk.list`; do
   cp -dp $lib quick3.tree/lib
 done
 $CCLINK -o quick3.tree/usr/bin/bin1 $srcdir/reloc1.c \
-    -Wl,--rpath-link,quick3.tree/usr/lib -L quick3.tree/usr/lib -l2
+    -Wl,--rpath-link,quick3.tree/usr/lib -L quick3.tree/usr/lib -l2 -lc -l1
 cat > quick3.tree/etc/prelink.conf <<EOF
 quick3.tree/usr/bin
 quick3.tree/lib

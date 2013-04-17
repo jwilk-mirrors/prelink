@@ -33,7 +33,7 @@ asm (".text\n"						\
      "\t.previous\n"					\
      ".L." #name ":\n"					\
      IFUNC_ASM (PICK (fn1, fn2))			\
-     "\t.size " #name ", .-" #name "\n")
+     "\t.size " #name ", .-.L" #name "\n")
 # endif
 #else
 # error Architecture not supported

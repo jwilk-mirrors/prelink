@@ -6,10 +6,10 @@ $CC -shared -O2 -fpic -o shuffle6lib1.so $srcdir/reloc1lib1.c
 $CC -shared -O2 -fpic -o shuffle6lib2.so $srcdir/reloc1lib2.c shuffle6lib1.so
 BINS="shuffle6"
 LIBS="shuffle6lib1.so shuffle6lib2.so"
-$CCLINK -o shuffle6 $srcdir/reloc1.c -Wl,--rpath-link,. shuffle6lib2.so \
+$CCLINK -o shuffle6 $srcdir/reloc1.c -Wl,--rpath-link,. shuffle6lib2.so -lc shuffle6lib1.so \
   -Wl,--verbose 2>&1 | sed -e '/^=========/,/^=========/!d;/^=========/d' \
   -e 's/0x08048000/0x08000000/;s/SIZEOF_HEADERS.*$/& . += 56;/' > shuffle6.lds
-$CCLINK -o shuffle6 $srcdir/reloc1.c -Wl,--rpath-link,. shuffle6lib2.so \
+$CCLINK -o shuffle6 $srcdir/reloc1.c -Wl,--rpath-link,. shuffle6lib2.so -lc shuffle6lib1.so \
   -Wl,-T,shuffle6.lds
 savelibs
 echo $PRELINK ${PRELINK_OPTS--vm} ./shuffle6 > shuffle6.log

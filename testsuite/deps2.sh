@@ -25,7 +25,7 @@ for lib in `cat syslnk.list`; do
   cp -dp $lib deps2.tree/lib
 done
 $CCLINK -o deps2.tree/usr/bin/bin1 $srcdir/deps1.c \
-    -Wl,-rpath,deps2.tree/usr/lib -L deps2.tree/usr/lib -l3
+    -Wl,-rpath,deps2.tree/usr/lib -L deps2.tree/usr/lib -l3 -lc -l1 -l2
 cat > deps2.tree/etc/prelink.conf <<EOF
 deps2.tree/usr/bin
 deps2.tree/lib

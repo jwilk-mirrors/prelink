@@ -9,7 +9,7 @@ $CC -shared -O2 -fpic -o ifunc1lib1.so $srcdir/ifunc1lib1.c
 $CC -shared -O2 -fpic -o ifunc1lib2.so $srcdir/ifunc1lib2.c ifunc1lib1.so
 BINS="ifunc1"
 LIBS="ifunc1lib1.so ifunc1lib2.so"
-$CCLINK -o ifunc1 $srcdir/ifunc1.c -Wl,--rpath-link,. ifunc1lib2.so
+$CCLINK -o ifunc1 $srcdir/ifunc1.c -Wl,--rpath-link,. ifunc1lib2.so -lc ifunc1lib1.so
 savelibs
 echo $PRELINK ${PRELINK_OPTS--vm} ./ifunc1 >> ifunc1.log
 $PRELINK ${PRELINK_OPTS--vm} ./ifunc1 >> ifunc1.log 2>&1 || exit 1

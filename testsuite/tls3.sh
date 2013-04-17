@@ -23,7 +23,7 @@ $CC -shared -O2 $SHFLAGS -o tls3lib2.so $srcdir/tls3lib2.c \
   tls3lib1.so 2>/dev/null
 BINS="tls3"
 LIBS="tls3lib1.so tls3lib2.so"
-$CCLINK -o tls3 $srcdir/tls1.c -Wl,--rpath-link,. tls3lib2.so
+$CCLINK -o tls3 $srcdir/tls1.c -Wl,--rpath-link,. tls3lib2.so -lc tls3lib1.so
 savelibs
 echo $PRELINK ${PRELINK_OPTS--vm} ./tls3 > tls3.log
 $PRELINK ${PRELINK_OPTS--vm} ./tls3 >> tls3.log 2>&1 || exit 1

@@ -6,7 +6,7 @@ $CXX -shared -O2 -fpic -o cxx1lib1.so $srcdir/cxx1lib1.C
 $CXX -shared -O2 -fpic -o cxx1lib2.so $srcdir/cxx1lib2.C cxx1lib1.so
 BINS="cxx1"
 LIBS="cxx1lib1.so cxx1lib2.so"
-$CXXLINK -o cxx1 $srcdir/cxx1.C -Wl,--rpath-link,. cxx1lib2.so
+$CXXLINK -o cxx1 $srcdir/cxx1.C -Wl,--rpath-link,. cxx1lib2.so cxx1lib1.so
 savelibs
 echo $PRELINK -vvvv ${PRELINK_OPTS--vm} ./cxx1 > cxx1.log
 $PRELINK -vvvv ${PRELINK_OPTS--vm} ./cxx1 >> cxx1.log 2>&1 || exit 1

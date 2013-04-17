@@ -11,7 +11,7 @@ $CC -shared -O2 -fpic -o tls1lib1.so $srcdir/tls1lib1.c
 $CC -shared -O2 -fpic -o tls1lib2.so $srcdir/tls1lib2.c tls1lib1.so
 BINS="tls1"
 LIBS="tls1lib1.so tls1lib2.so"
-$CCLINK -o tls1 $srcdir/tls1.c -Wl,--rpath-link,. tls1lib2.so
+$CCLINK -o tls1 $srcdir/tls1.c -Wl,--rpath-link,. tls1lib2.so -lc tls1lib1.so
 savelibs
 echo $PRELINK ${PRELINK_OPTS--vm} ./tls1 > tls1.log
 $PRELINK ${PRELINK_OPTS--vm} ./tls1 >> tls1.log 2>&1 || exit 1
