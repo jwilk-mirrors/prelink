@@ -1,3 +1,12 @@
+2013-04-18  Jakub Jelinek  <jakub@redhat.com>
+
+	* testsuite/reloc4.sh: Add libraries to link lines to make
+	testsuite work both with --no-add-needed and with --add-needed,
+	including latest ld.bfd.
+	* testsuite/reloc5.sh: Likewise.
+	* testsuite/reloc8.sh: Likewise.
+	* testsuite/reloc9.sh: Likewise.
+
 2013-04-17  Jakub Jelinek  <jakub@redhat.com>
 
 	* testsuite/ifunc.h (IFUNC_DECL): Fix up .size on ppc64.

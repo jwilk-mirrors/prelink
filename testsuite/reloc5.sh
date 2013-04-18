@@ -7,7 +7,7 @@ rm -f prelink.cache
 $CC -O2 -o reloc5.tmp $srcdir/reloc5.c
 ./reloc5.tmp > reloc5.tmp.c
 BINS="reloc5"
-$CCLINK -o reloc5 reloc5.tmp.c -Wl,--rpath-link,. reloc4lib3.so
+$CCLINK -o reloc5 reloc5.tmp.c -Wl,--rpath-link,. reloc4lib3.so -lc reloc4lib2.so
 savelibs
 rm -f reloc5*.tmp reloc5*.tmp.c
 echo $PRELINK ${PRELINK_OPTS--vm} ./reloc5 > reloc5.log

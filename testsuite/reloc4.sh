@@ -21,7 +21,7 @@ $CC -shared -fpic $extra -o reloc4lib2.so reloc4lib2.tmp.c reloc4lib1.so
 $CC -shared -fpic $extra -o reloc4lib3.so reloc4lib3.tmp.c reloc4lib2.so
 BINS="reloc4"
 LIBS="reloc4lib1.so reloc4lib2.so reloc4lib3.so"
-$CCLINK $extra -o reloc4 reloc4.tmp.c -Wl,--rpath-link,. reloc4lib3.so
+$CCLINK $extra -o reloc4 reloc4.tmp.c -Wl,--rpath-link,. reloc4lib3.so -lc reloc4lib2.so
 savelibs
 rm -f reloc4*.tmp reloc4*.tmp.c
 echo $PRELINK ${PRELINK_OPTS--vm} ./reloc4 > reloc4.log

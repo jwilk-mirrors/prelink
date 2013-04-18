@@ -17,7 +17,7 @@ $CC -shared -O2 -Wl,-z,nocombreloc -fpic -o reloc8lib1.so $srcdir/reloc3lib1.c
 $CC -shared -O2 -Wl,-z,nocombreloc -fpic -o reloc8lib2.so $srcdir/reloc1lib2.c reloc8lib1.so
 BINS="reloc8"
 LIBS="reloc8lib1.so reloc8lib2.so"
-$CCLINK -o reloc8 $NOCOPYRELOC $srcdir/reloc7.c -Wl,--rpath-link,. reloc8lib2.so
+$CCLINK -o reloc8 $NOCOPYRELOC $srcdir/reloc7.c -Wl,--rpath-link,. reloc8lib2.so -lc reloc8lib1.so
 savelibs
 echo $PRELINK ${PRELINK_OPTS--vm} ./reloc8 > reloc8.log
 $PRELINK ${PRELINK_OPTS--vm} ./reloc8 >> reloc8.log 2>&1 || exit 1
