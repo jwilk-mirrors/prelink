@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2009 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2009, 2013 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -90,7 +90,13 @@ s390x_adjust_rela (DSO *dso, GElf_Rela *rela, GElf_Addr start,
 	  rela->r_addend += adjust;
 	}
       break;
+    case R_390_IRELATIVE:
+      if (rela->r_addend >= start)
+	/* Adjust the resolver function address.  */
+	rela->r_addend += adjust;
+      /* FALLTHROUGH */
     case R_390_JMP_SLOT:
+      /* Adjust the address in the GOT slot.  */
       addr = read_ube64 (dso, rela->r_offset);
       if (addr >= start)
 	write_be64 (dso, rela->r_offset, addr + adjust);
@@ -113,7 +119,8 @@ s390x_prelink_rela (struct prelink_info *info, GElf_Rela *rela,
   DSO *dso = info->dso;
   GElf_Addr value;
 
-  if (GELF_R_TYPE (rela->r_info) == R_390_NONE)
+  if (GELF_R_TYPE (rela->r_info) == R_390_NONE
+      || GELF_R_TYPE (rela->r_info) == R_390_IRELATIVE)
     return 0;
   else if (GELF_R_TYPE (rela->r_info) == R_390_RELATIVE)
     {
@@ -193,6 +200,7 @@ static int
 s390x_apply_conflict_rela (struct prelink_info *info, GElf_Rela *rela,
 			   char *buf, GElf_Addr dest_addr)
 {
+  GElf_Rela *ret;
   switch (GELF_R_TYPE (rela->r_info))
     {
     case R_390_64:
@@ -206,6 +214,16 @@ s390x_apply_conflict_rela (struct prelink_info *info, GElf_Rela *rela,
       break;
     case R_390_8:
       buf_write_8 (buf, rela->r_addend);
+      break;
+    case R_390_IRELATIVE:
+      if (dest_addr == 0)
+	return 5;
+      ret = prelink_conflict_add_rela (info);
+      if (ret == NULL)
+	return 1;
+      ret->r_offset = dest_addr;
+      ret->r_info = GELF_R_INFO (0, R_390_IRELATIVE);
+      ret->r_addend = rela->r_addend;
       break;
     default:
       abort ();
@@ -308,17 +326,13 @@ s390x_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
 	/* Even local DTPMOD and TPOFF relocs need conflicts.  */
 	case R_390_TLS_DTPMOD:
 	case R_390_TLS_TPOFF:
+	/* IRELATIVE always need conflicts.  */
+	case R_390_IRELATIVE:
 	  break;
 	default:
 	  return 0;
 	}
       value = 0;
-    }
-  else if (conflict->ifunc)
-    {
-      error (0, 0, "%s: STT_GNU_IFUNC not handled on S390x yet",
-	     dso->filename);
-      return 1;
     }
   else
     {
@@ -344,8 +358,12 @@ s390x_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
     case R_390_GLOB_DAT:
     case R_390_JMP_SLOT:
     case R_390_64:
+    case R_390_IRELATIVE:
       ret->r_addend = value;
-      r_type = R_390_64;
+      if (conflict != NULL && conflict->ifunc)
+	r_type = R_390_IRELATIVE;
+      else
+	r_type = R_390_64;
       break;
     case R_390_PC32:
       value -= rela->r_offset;
@@ -498,6 +516,7 @@ s390x_undo_prelink_rela (DSO *dso, GElf_Rela *rela, GElf_Addr relaaddr)
     {
     case R_390_NONE:
     case R_390_RELATIVE:
+    case R_390_IRELATIVE:
       break;
     case R_390_JMP_SLOT:
       sec = addr_to_sec (dso, rela->r_offset);
@@ -565,6 +584,7 @@ s390x_reloc_size (int reloc_type)
     case R_390_JMP_SLOT:
     case R_390_64:
     case R_390_PC64:
+    case R_390_IRELATIVE:
       return 8;
     case R_390_32:
     case R_390_PC32:

@@ -1,3 +1,12 @@
+2013-04-25  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/arch-s390.c (s390_adjust_rela, s390_prelink_rela,
+	s390_apply_conflict_rela, s390_prelink_conflict_rela,
+	s390_undo_prelink_rela): Handle R_390_IRELATIVE.
+	* src/arch-s390x.c (s390x_adjust_rela, s390x_prelink_rela,
+	s390x_apply_conflict_rela, s390x_prelink_conflict_rela,
+	s390x_undo_prelink_rela, s390x_reloc_size): Likewise.
+
 2013-04-18  Jakub Jelinek  <jakub@redhat.com>
 
 	* testsuite/reloc4.sh: Add libraries to link lines to make
