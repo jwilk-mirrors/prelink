@@ -10,7 +10,7 @@ TESTS = movelibs.sh \
 	reloc7.sh reloc8.sh reloc9.sh reloc10.sh reloc11.sh \
 	shuffle1.sh shuffle2.sh shuffle3.sh shuffle4.sh shuffle5.sh \
 	shuffle6.sh shuffle7.sh shuffle8.sh shuffle9.sh undo1.sh \
-	layout1.sh layout2.sh \
+	layout1.sh layout2.sh unprel1.sh \
 	tls1.sh tls2.sh tls3.sh tls4.sh tls5.sh tls6.sh tls7.sh \
 	cxx1.sh cxx2.sh cxx3.sh quick1.sh quick2.sh quick3.sh \
 	cycle1.sh cycle2.sh \

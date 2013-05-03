@@ -1,5 +1,15 @@
 2013-05-03  Jakub Jelinek  <jakub@redhat.com>
 
+	* src/cache.c (prelink_save_cache_check): For ET_CACHE_DYN
+	or ET_UNPRELINKABLE dependencies, call prelink_save_cache_check
+	recursively.
+	* testsuite/Makefile.am (TESTS): Add unprel1.sh.
+	* testsuite/Makefile.in: Regenerated.
+	* testsuite/unprel1.sh: New test.
+	* testsuite/unprel1.c: New file.
+	* testsuite/unprel1lib1.c: New file.
+	* testsuite/unprel1lib2.c: New file.
+
 	* src/prelink.h (R_390_IRELATIVE): Define if not defined.
 
 2013-04-25  Jakub Jelinek  <jakub@redhat.com>

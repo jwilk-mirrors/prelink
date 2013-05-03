@@ -1,4 +1,4 @@
-/* Copyright (C) 2001, 2002, 2003, 2004, 2006 Red Hat, Inc.
+/* Copyright (C) 2001, 2002, 2003, 2004, 2006, 2013 Red Hat, Inc.
    Written by Jakub Jelinek <jakub@redhat.com>, 2001.
 
    This program is free software; you can redistribute it and/or modify
@@ -566,9 +566,13 @@ prelink_save_cache_check (struct prelink_entry *ent)
 	  return 1;
 	break;
       case ET_CACHE_DYN:
+	if (prelink_save_cache_check (ent->depends[i]))
+	  return 1;
 	break;
       case ET_UNPRELINKABLE:
 	if (ent->type != ET_UNPRELINKABLE)
+	  return 1;
+	if (prelink_save_cache_check (ent->depends[i]))
 	  return 1;
 	break;
       default:
