@@ -1,4 +1,4 @@
-.TH prelink 8 "01 March 2007"
+.TH prelink 8 "19 July 2013"
 .SH NAME
 prelink \- prelink ELF shared libraries and binaries to speed up startup time
 .SH SYNOPSIS
@@ -136,6 +136,9 @@ to be used when
 .B prelink
 queries the dynamic linker about symbol resolution details.
 .TP
+.B \-\-layout\-page\-size=SIZE
+Layout start of libraries at given boundary.
+.TP
 .B \-\-libs\-only
 Only prelink ELF shared libraries, don't prelink any binaries.
 .TP
@@ -217,6 +220,9 @@ Print version and exit.
 .TP
 .B \-? \-\-help
 Print short help and exit.
+.TP
+.B \-\-usage
+Print short usage message.
 .SH ARGUMENTS
 Command-line arguments should be either directory hierarchies (in which case
 .I \-l

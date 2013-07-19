@@ -1,3 +1,8 @@
+2013-07-19  Marek Polacek  <polacek@redhat.com>
+
+	* doc/prelink.8 (--usage): Document it. 
+	(--layout-page-size=): Likewise.
+
 2013-05-03  Jakub Jelinek  <jakub@redhat.com>
 
 	* src/cache.c (prelink_save_cache_check): For ET_CACHE_DYN
