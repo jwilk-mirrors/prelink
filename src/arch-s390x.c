@@ -311,21 +311,21 @@ s390x_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
   int r_type;
 
   if (GELF_R_TYPE (rela->r_info) == R_390_RELATIVE
-      || GELF_R_TYPE (rela->r_info) == R_390_NONE
-      || info->dso == dso)
+      || GELF_R_TYPE (rela->r_info) == R_390_NONE)
     /* Fast path: nothing to do.  */
     return 0;
   conflict = prelink_conflict (info, GELF_R_SYM (rela->r_info),
 			       GELF_R_TYPE (rela->r_info));
   if (conflict == NULL)
     {
-      if (info->curtls == NULL)
-	return 0;
       switch (GELF_R_TYPE (rela->r_info))
 	{
 	/* Even local DTPMOD and TPOFF relocs need conflicts.  */
 	case R_390_TLS_DTPMOD:
 	case R_390_TLS_TPOFF:
+	  if (info->curtls == NULL || info->dso == dso)
+	    return 0;
+	  break;
 	/* IRELATIVE always need conflicts.  */
 	case R_390_IRELATIVE:
 	  break;
@@ -334,6 +334,8 @@ s390x_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
 	}
       value = 0;
     }
+  else if (info->dso == dso && !conflict->ifunc)
+    return 0;
   else
     {
       /* DTPOFF wants to see only real conflicts, not lookups
@@ -357,13 +359,12 @@ s390x_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
       value -= rela->r_offset;
     case R_390_GLOB_DAT:
     case R_390_JMP_SLOT:
+      r_type = R_390_64;
     case R_390_64:
     case R_390_IRELATIVE:
       ret->r_addend = value;
       if (conflict != NULL && conflict->ifunc)
 	r_type = R_390_IRELATIVE;
-      else
-	r_type = R_390_64;
       break;
     case R_390_PC32:
       value -= rela->r_offset;

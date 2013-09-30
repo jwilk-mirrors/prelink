@@ -1,3 +1,9 @@
+2013-09-30  Richard Sandiford  <rsandifo@linux.vnet.ibm.com>
+
+	* src/arch-s390.c (s390_prelink_conflict_rela): Fix handling of
+	R_390_IRELATIVE.
+	* src/arch-s390x.c (s390x_prelink_conflict_rela): Likewise.
+
 2013-07-19  Marek Polacek  <polacek@redhat.com>
 
 	* doc/prelink.8 (--usage): Document it. 
