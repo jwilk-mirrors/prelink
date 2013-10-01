@@ -1,3 +1,7 @@
+2013-10-01  Jakub Jelinek  <jakub@redhat.com>
+
+	* testsuite/ifunc.h (IFUNC_ASM): Add s390x and s390 version.
+
 2013-09-30  Richard Sandiford  <rsandifo@linux.vnet.ibm.com>
 
 	* src/arch-s390.c (s390_prelink_conflict_rela): Fix handling of

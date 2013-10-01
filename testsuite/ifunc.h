@@ -35,6 +35,22 @@ asm (".text\n"						\
      IFUNC_ASM (PICK (fn1, fn2))			\
      "\t.size " #name ", .-.L" #name "\n")
 # endif
+#elif defined __s390x__
+# define IFUNC_ASM(fn) "\tlarl %r2," fn "\n"		\
+    "\tbr %r14\n"
+#elif defined __s390__
+# define IFUNC_ASM(fn) "\t"				\
+    "\tst %r12,48(%r15)\n"				\
+    "\tbasr %r5,0\n"					\
+  "1:\tl %r12,3f-1b(%r5)\n"				\
+    "\tl %r1,2f-1b(%r5)\n"				\
+    "\tla %r12,0(%r12,%r5)\n"				\
+    "\tla %r2,0(%r1,%r12)\n"				\
+    "\tl %r12,48(%r15)\n"				\
+    "\tbr %r14\n"					\
+    "\t.align 4\n"					\
+  "2:\t.long " fn "@GOTOFF\n"				\
+  "3:\t.long _GLOBAL_OFFSET_TABLE_-1b\n"
 #else
 # error Architecture not supported
 #endif
