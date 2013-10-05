@@ -351,10 +351,13 @@ s390_prelink_conflict_rela (DSO *dso, struct prelink_info *info,
 	ret->r_info = GELF_R_INFO (0, R_390_IRELATIVE);
       break;
     case R_390_32:
-    case R_390_IRELATIVE:
       ret->r_addend = (Elf32_Sword) value;
       if (conflict != NULL && conflict->ifunc)
 	ret->r_info = GELF_R_INFO (0, R_390_IRELATIVE);
+      break;
+    case R_390_IRELATIVE:
+      ret->r_addend = (Elf32_Sword) value;
+      ret->r_info = GELF_R_INFO (0, R_390_IRELATIVE);
       break;
     case R_390_PC32:
       ret->r_addend = (Elf32_Sword) (value - rela->r_offset);

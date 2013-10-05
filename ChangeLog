@@ -1,3 +1,8 @@
+2013-10-05  Jakub Jelinek  <jakub@redhat.com>
+
+	* src/arch-s390.c (s390_prelink_conflict_rela): For R_390_IRELATIVE,
+	always use that relocation type in the conflict section.
+
 2013-10-01  Jakub Jelinek  <jakub@redhat.com>
 
 	* testsuite/ifunc.h (IFUNC_ASM): Add s390x and s390 version.
